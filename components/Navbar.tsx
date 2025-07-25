@@ -4,19 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image";
-
-// Lenis type and global declaration
-type Lenis = {
-  scrollTo: (target: HTMLElement) => void;
-  stop?: () => void;
-  start?: () => void;
-};
-
-declare global {
-  interface Window {
-    lenis?: Lenis;
-  }
-}
+import Lenis from "@studio-freight/lenis/types";
 
 type NavLink = {
   name: string;
