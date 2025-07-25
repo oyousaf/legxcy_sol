@@ -5,7 +5,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image";
 
-const navLinks = [
+// Define the type for Lenis if not available globally
+type Lenis = {
+  scrollTo: (target: HTMLElement) => void;
+  stop?: () => void;
+  start?: () => void;
+};
+
+// Navigation link type
+type NavLink = {
+  name: string;
+  id: string;
+};
+
+const navLinks: NavLink[] = [
   { name: "Home", id: "home" },
   { name: "About", id: "about" },
   { name: "Services", id: "services" },
@@ -15,45 +28,36 @@ const navLinks = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lenisInstance, setLenisInstance] = useState<any>(null);
+  const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
 
-  // Lock body scroll when menu is open
+  // Lock scroll when menu is open
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
+    const lenis = (window as any).lenis as Lenis | undefined;
 
     if (menuOpen) {
       html.classList.add("overflow-hidden");
       body.classList.add("overflow-hidden");
-
-      // Pause Lenis loop if active
-      if ((window as any).lenis?.stop) {
-        (window as any).lenis.stop();
-      }
+      lenis?.stop?.();
     } else {
       html.classList.remove("overflow-hidden");
       body.classList.remove("overflow-hidden");
-
-      // Resume Lenis
-      if ((window as any).lenis?.start) {
-        (window as any).lenis.start();
-      }
+      lenis?.start?.();
     }
 
-    // Clean up on unmount
     return () => {
       html.classList.remove("overflow-hidden");
       body.classList.remove("overflow-hidden");
-      if ((window as any).lenis?.start) {
-        (window as any).lenis.start();
-      }
+      lenis?.start?.();
     };
   }, [menuOpen]);
 
-  // Grab lenis instance if available
+  // Capture Lenis instance
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).lenis) {
-      setLenisInstance((window as any).lenis);
+    if (typeof window !== "undefined") {
+      const lenis = (window as any).lenis as Lenis | undefined;
+      if (lenis) setLenisInstance(lenis);
     }
   }, []);
 
@@ -124,11 +128,10 @@ export default function Navbar() {
               className="fixed inset-0 z-[90] backdrop-blur-xl bg-black/60 saturate-150"
               onClick={() => setMenuOpen(false)}
               style={{
-                boxShadow: "inset 0 0 80px rgba(0, 0, 0, 0.7)", // soft vignette
+                boxShadow: "inset 0 0 80px rgba(0, 0, 0, 0.7)",
               }}
             />
 
-            {/* Mobile Nav Menu Panel */}
             <motion.div
               key="mobile-nav"
               initial={{ opacity: 0, x: "100%", scale: 0.95 }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -9,30 +9,37 @@ import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
 
+type ContactFormData = {
+  name: string;
+  email: string;
+  message: string;
+  website?: string; // honeypot
+};
+
 export default function Contact() {
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm();
+  } = useForm<ContactFormData>();
 
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
 
-  // Set up Turnstile listener
   useEffect(() => {
     (window as any).turnstileCallback = function () {
-      const widget = document.querySelector(".cf-turnstile") as any;
+      const widget = document.querySelector(".cf-turnstile") as HTMLElement;
       if (widget) {
-        widget.addEventListener("turnstile-callback", (e: any) => {
-          setToken(e.detail?.token || "");
+        widget.addEventListener("turnstile-callback", (e: Event) => {
+          const customEvent = e as CustomEvent;
+          setToken(customEvent.detail?.token || "");
         });
       }
     };
   }, []);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
     if (data.website || !token) return;
 
     try {
@@ -61,7 +68,6 @@ export default function Contact() {
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center"
       style={{ backgroundColor: "var(--mossy-bg)", color: "var(--foreground)" }}
     >
-      {/* Cloudflare Turnstile script */}
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=turnstileCallback"
         strategy="afterInteractive"
@@ -95,7 +101,6 @@ export default function Contact() {
         onSubmit={handleSubmit(onSubmit)}
         className="max-w-xl mx-auto grid gap-4 text-left"
       >
-        {/* 🐝 Honeypot */}
         <input
           type="text"
           {...register("website")}
@@ -134,7 +139,6 @@ export default function Contact() {
           <span className="text-red-400 text-sm">Message is required</span>
         )}
 
-        {/* ✅ Cloudflare Turnstile container */}
         <div
           className="cf-turnstile text-center"
           data-sitekey={TURNSTILE_SITE_KEY}

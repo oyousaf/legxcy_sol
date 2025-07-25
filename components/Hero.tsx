@@ -5,11 +5,15 @@ import Image from "next/image";
 
 export default function Hero() {
   const handleSmoothScroll = () => {
-    const target = document.querySelector("#contact");
-    const lenis = (window as any).lenis;
+    const target = document.querySelector("#contact") as HTMLElement | null;
+    const lenis = (
+      window as unknown as { lenis?: { scrollTo: (el: Element) => void } }
+    ).lenis;
 
-    if (target && lenis) {
+    if (target && typeof lenis?.scrollTo === "function") {
       lenis.scrollTo(target);
+    } else if (target) {
+      target.scrollIntoView({ behavior: "smooth" });
     }
   };
 
