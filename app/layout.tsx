@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import LenisProvider from "@/lib/scroll";
+import LenisProvider from "@/lib/LenisProvider";
 
 import { Inter, Geist_Mono } from "next/font/google";
+import Footer from "@/components/Footer";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +32,9 @@ export default function RootLayout({
       <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <LenisProvider>
           <Navbar />
+          <ScrollToTop />
           <main className="pt-20">{children}</main>
+          <Footer />
         </LenisProvider>
       </body>
     </html>

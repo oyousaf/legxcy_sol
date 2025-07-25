@@ -3,17 +3,6 @@
 import { useEffect } from "react";
 import Lenis from "@studio-freight/lenis";
 
-type LenisInstance = {
-  raf: (time: number) => void;
-  destroy: () => void;
-};
-
-declare global {
-  interface Window {
-    lenis?: LenisInstance;
-  }
-}
-
 export default function LenisProvider({
   children,
 }: {
