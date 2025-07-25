@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image";
-import Lenis from "@studio-freight/lenis/types";
+import Lenis from "lenis";
 
 type NavLink = {
   name: string;
