@@ -5,14 +5,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image";
 
-// Define the type for Lenis if not available globally
+// Lenis type and global declaration
 type Lenis = {
   scrollTo: (target: HTMLElement) => void;
   stop?: () => void;
   start?: () => void;
 };
 
-// Navigation link type
+declare global {
+  interface Window {
+    lenis?: Lenis;
+  }
+}
+
 type NavLink = {
   name: string;
   id: string;
@@ -30,11 +35,10 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
 
-  // Lock scroll when menu is open
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    const lenis = (window as any).lenis as Lenis | undefined;
+    const lenis = window.lenis;
 
     if (menuOpen) {
       html.classList.add("overflow-hidden");
@@ -49,15 +53,13 @@ export default function Navbar() {
     return () => {
       html.classList.remove("overflow-hidden");
       body.classList.remove("overflow-hidden");
-      lenis?.start?.();
+      window.lenis?.start?.();
     };
   }, [menuOpen]);
 
-  // Capture Lenis instance
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const lenis = (window as any).lenis as Lenis | undefined;
-      if (lenis) setLenisInstance(lenis);
+    if (typeof window !== "undefined" && window.lenis) {
+      setLenisInstance(window.lenis);
     }
   }, []);
 
@@ -79,7 +81,6 @@ export default function Navbar() {
       style={{ backgroundColor: "rgba(15, 47, 35, 0.85)" }}
     >
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-4">
-        {/* Logo */}
         <button
           onClick={() => handleScroll("home")}
           className="flex items-center gap-2"
@@ -90,7 +91,6 @@ export default function Navbar() {
           </span>
         </button>
 
-        {/* Desktop Nav */}
         <ul className="hidden md:flex space-x-6 text-white text-sm font-medium">
           {navLinks.map((link) => (
             <li key={link.name}>
@@ -104,7 +104,6 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* Mobile Menu Toggle */}
         <div className="md:hidden text-white z-[100] relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -115,7 +114,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Animated Mobile Menu */}
       <AnimatePresence>
         {menuOpen && (
           <>

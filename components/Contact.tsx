@@ -16,6 +16,13 @@ type ContactFormData = {
   website?: string; // honeypot
 };
 
+// Extend Window to include the Turnstile callback
+declare global {
+  interface Window {
+    turnstileCallback?: () => void;
+  }
+}
+
 export default function Contact() {
   const {
     register,
@@ -28,14 +35,14 @@ export default function Contact() {
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    (window as any).turnstileCallback = function () {
-      const widget = document.querySelector(".cf-turnstile") as HTMLElement;
-      if (widget) {
-        widget.addEventListener("turnstile-callback", (e: Event) => {
-          const customEvent = e as CustomEvent;
-          setToken(customEvent.detail?.token || "");
-        });
-      }
+    window.turnstileCallback = () => {
+      const widget = document.querySelector(".cf-turnstile");
+      if (!widget) return;
+
+      widget.addEventListener("turnstile-callback", (e) => {
+        const customEvent = e as CustomEvent<{ token: string }>;
+        setToken(customEvent.detail?.token ?? "");
+      });
     };
   }, []);
 
@@ -68,6 +75,7 @@ export default function Contact() {
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center"
       style={{ backgroundColor: "var(--mossy-bg)", color: "var(--foreground)" }}
     >
+      {/* Cloudflare Turnstile script */}
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=turnstileCallback"
         strategy="afterInteractive"
@@ -101,6 +109,7 @@ export default function Contact() {
         onSubmit={handleSubmit(onSubmit)}
         className="max-w-xl mx-auto grid gap-4 text-left"
       >
+        {/* Honeypot field */}
         <input
           type="text"
           {...register("website")}

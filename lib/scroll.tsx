@@ -3,6 +3,17 @@
 import { useEffect } from "react";
 import Lenis from "@studio-freight/lenis";
 
+type LenisInstance = {
+  raf: (time: number) => void;
+  destroy: () => void;
+};
+
+declare global {
+  interface Window {
+    lenis?: LenisInstance;
+  }
+}
+
 export default function LenisProvider({
   children,
 }: {
@@ -11,11 +22,10 @@ export default function LenisProvider({
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     });
 
-    // Make Lenis available globally
-    (window as any).lenis = lenis;
+    window.lenis = lenis;
 
     const raf = (time: number) => {
       lenis.raf(time);
@@ -26,7 +36,7 @@ export default function LenisProvider({
 
     return () => {
       lenis.destroy();
-      delete (window as any).lenis;
+      delete window.lenis;
     };
   }, []);
 
