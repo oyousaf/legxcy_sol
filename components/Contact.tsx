@@ -105,7 +105,6 @@ export default function Contact() {
         <input
           type="text"
           id="website"
-          name="website"
           {...register("website")}
           autoComplete="off"
           tabIndex={-1}
@@ -118,7 +117,6 @@ export default function Contact() {
         <input
           type="text"
           id="name"
-          name="name"
           placeholder="Your Name"
           autoComplete="name"
           {...register("name", { required: true })}
@@ -134,7 +132,6 @@ export default function Contact() {
         <input
           type="email"
           id="email"
-          name="email"
           placeholder="Your Email"
           autoComplete="email"
           {...register("email", { required: true })}
@@ -149,7 +146,6 @@ export default function Contact() {
         </label>
         <textarea
           id="message"
-          name="message"
           placeholder="Your Message"
           autoComplete="off"
           rows={5}
