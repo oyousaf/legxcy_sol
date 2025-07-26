@@ -29,14 +29,14 @@ export const metadata: Metadata = {
     "EMEA digital solutions",
     "Next.js freelancer UK",
   ],
-  metadataBase: new URL("https://www.legxcysol.dev"),
+  metadataBase: new URL("https://legxcysol.dev"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "Legxcy Solutions",
     description: "Bespoke websites crafted for impact.",
-    url: "https://www.legxcysol.dev",
+    url: "https://legxcysol.dev",
     siteName: "Legxcy Solutions",
     locale: "en_GB",
     type: "website",
