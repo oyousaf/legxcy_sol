@@ -110,7 +110,7 @@ export default function RootLayout({
                 "@type": "ContactPoint",
                 contactType: "Customer Support",
                 email: "info@legxcysol.dev",
-                url: "https://legxcysol.dev#contact",
+                url: "https://legxcysol.dev",
               },
               sameAs: ["https://legxcysol.dev"],
             }),
