@@ -28,10 +28,7 @@ const services = [
 
 export default function Services() {
   return (
-    <section
-      id="services"
-      className="min-h-screen px-6 sm:px-12 py-24"
-    >
+    <section id="services" className="min-h-screen px-6 sm:px-12 py-24">
       <div className="max-w-6xl mx-auto text-center">
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
@@ -59,16 +56,19 @@ export default function Services() {
           {services.map((service, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.15 }}
               viewport={{ once: true }}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-xl text-left shadow-lg hover:scale-[1.02] transition-transform"
+              whileHover={{ scale: 1.03 }}
+              className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl shadow-md text-left transition-all duration-300 hover:shadow-xl hover:border-[color:var(--accent-green)]"
             >
               <div className="text-[color:var(--accent-green)] mb-3">
                 {service.icon}
               </div>
-              <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {service.title}
+              </h3>
               <p className="text-[color:var(--foreground)]">{service.desc}</p>
             </motion.div>
           ))}

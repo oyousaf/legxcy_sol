@@ -43,10 +43,7 @@ const projects = [
 
 export default function Projects() {
   return (
-    <section
-      id="projects"
-      className="min-h-screen px-6 sm:px-12 py-24"
-    >
+    <section id="projects" className="min-h-screen px-6 sm:px-12 py-24">
       <div className="max-w-6xl mx-auto text-center">
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
@@ -73,11 +70,12 @@ export default function Projects() {
           {projects.map((project, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.15 }}
               viewport={{ once: true }}
-              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden shadow-lg text-left hover:scale-[1.02] transition-transform"
+              whileHover={{ scale: 1.02 }}
+              className="group bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg transition-transform duration-300"
             >
               <div className="w-full h-48 relative overflow-hidden">
                 <motion.video
@@ -93,8 +91,8 @@ export default function Projects() {
                     e.currentTarget.currentTime = 0;
                   }}
                   initial={{ opacity: 0.9, scale: 1 }}
-                  whileHover={{ opacity: 1, scale: 1.02 }}
-                  transition={{ duration: 0.3 }}
+                  whileHover={{ opacity: 1, scale: 1.03 }}
+                  transition={{ duration: 0.4 }}
                 />
               </div>
 
@@ -110,7 +108,7 @@ export default function Projects() {
                     href={project.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-[color:var(--accent-green)] hover:underline"
+                    className="text-sm font-medium text-[color:var(--accent-green)] hover:underline transition-colors"
                   >
                     View Project →
                   </a>
