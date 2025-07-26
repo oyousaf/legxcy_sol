@@ -26,7 +26,6 @@ export default function About() {
     <section
       id="about"
       className="min-h-screen px-6 sm:px-12 py-24"
-      style={{ backgroundColor: "var(--mossy-bg)", color: "var(--foreground)" }}
     >
       <div className="max-w-5xl mx-auto text-center">
         <motion.h2

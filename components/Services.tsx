@@ -31,7 +31,6 @@ export default function Services() {
     <section
       id="services"
       className="min-h-screen px-6 sm:px-12 py-24"
-      style={{ backgroundColor: "var(--mossy-bg)", color: "var(--foreground)" }}
     >
       <div className="max-w-6xl mx-auto text-center">
         <motion.h2

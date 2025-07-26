@@ -66,7 +66,6 @@ export default function Contact() {
     <section
       id="contact"
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center"
-      style={{ backgroundColor: "var(--mossy-bg)", color: "var(--foreground)" }}
     >
       {/* Cloudflare Turnstile Script */}
       <Script
