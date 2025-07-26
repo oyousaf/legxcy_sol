@@ -23,6 +23,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null);
 
+  // Stop body scroll when menu is open
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -45,6 +46,7 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
+  // Grab Lenis instance from global
   useEffect(() => {
     if (typeof window !== "undefined" && window.lenis) {
       setLenisInstance(window.lenis);
@@ -64,7 +66,10 @@ export default function Navbar() {
   };
 
   return (
-    <header
+    <motion.header
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
       className="fixed top-0 left-0 w-full z-[99] backdrop-blur-md border-b border-white/10"
       style={{ backgroundColor: "rgba(15, 47, 35, 0.85)" }}
     >
@@ -72,6 +77,7 @@ export default function Navbar() {
         <button
           onClick={() => handleScroll("home")}
           className="flex items-center gap-2"
+          aria-label="Go to Home"
         >
           <Image src="/logo.png" alt="Legxcy Logo" width={40} height={40} />
           <span className="text-lg font-semibold text-white">
@@ -79,12 +85,13 @@ export default function Navbar() {
           </span>
         </button>
 
+        {/* Desktop Nav */}
         <ul className="hidden md:flex space-x-6 text-white text-sm font-medium">
           {navLinks.map((link) => (
             <li key={link.name}>
               <button
                 onClick={() => handleScroll(link.id)}
-                className="hover:text-[color:var(--accent-green)] transition-colors cursor-pointer"
+                className="hover:text-[color:var(--accent-green)] transition-colors"
               >
                 {link.name}
               </button>
@@ -92,16 +99,18 @@ export default function Navbar() {
           ))}
         </ul>
 
+        {/* Mobile Toggle */}
         <div className="md:hidden text-white z-[100] relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle Menu"
+            aria-label="Toggle menu"
           >
             {menuOpen ? <FiX size={30} /> : <FiMenu size={30} />}
           </button>
         </div>
       </nav>
 
+      {/* Mobile Menu */}
       <AnimatePresence>
         {menuOpen && (
           <>
@@ -113,9 +122,7 @@ export default function Navbar() {
               transition={{ duration: 0.3 }}
               className="fixed inset-0 z-[90] backdrop-blur-xl bg-black/60 saturate-150"
               onClick={() => setMenuOpen(false)}
-              style={{
-                boxShadow: "inset 0 0 80px rgba(0, 0, 0, 0.7)",
-              }}
+              style={{ boxShadow: "inset 0 0 80px rgba(0, 0, 0, 0.7)" }}
             />
 
             <motion.div
@@ -143,6 +150,6 @@ export default function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </motion.header>
   );
 }
