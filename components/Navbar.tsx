@@ -91,7 +91,7 @@ export default function Navbar() {
             <li key={link.name}>
               <button
                 onClick={() => handleScroll(link.id)}
-                className="hover:text-[color:var(--accent-green)] transition-colors"
+                className="hover:text-[color:var(--accent-green)] transition-colors cursor-pointer"
               >
                 {link.name}
               </button>

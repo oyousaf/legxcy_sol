@@ -208,7 +208,7 @@ export default function Contact() {
           type="submit"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
-          className="w-full mt-2 px-6 py-3 bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md transition hover:brightness-110 disabled:opacity-50"
+          className="w-full mt-2 px-6 py-3 cursor-pointer bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md transition hover:brightness-110 disabled:opacity-50"
         >
           {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
         </motion.button>
