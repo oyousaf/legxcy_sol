@@ -93,8 +93,8 @@ export default function Contact() {
         viewport={{ once: true }}
         className="text-lg max-w-2xl mx-auto text-[color:var(--foreground)] mb-10"
       >
-        Whether you’re ready to launch a project or simply exploring ideas, I’d
-        love to hear from you.
+        Whether you’re ready to launch a project or simply exploring ideas, we
+        would love to hear from you.
       </motion.p>
 
       <form
