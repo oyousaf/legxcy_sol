@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import LenisProvider from "@/lib/LenisProvider";
 import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
+import Script from "next/script";
 import { Inter, Geist_Mono } from "next/font/google";
 
 const inter = Inter({
@@ -36,7 +37,6 @@ export const metadata: Metadata = {
     "Mobile-first web design",
     "High-performance websites",
   ],
-
   metadataBase: new URL("https://legxcysol.dev"),
   alternates: {
     canonical: "/",
@@ -75,6 +75,48 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Structured Data for SEO */}
+        <Script
+          id="structured-data"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ProfessionalService",
+              name: "Legxcy Solutions",
+              url: "https://legxcysol.dev",
+              logo: "https://legxcysol.dev/logo.png",
+              image: "https://legxcysol.dev/og-image.jpg",
+              description:
+                "Freelance web development service offering bespoke, modern, high-performance websites for UK and EMEA businesses.",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Loughborough",
+                addressCountry: "GB",
+              },
+              areaServed: {
+                "@type": "GeoCircle",
+                geoMidpoint: {
+                  "@type": "GeoCoordinates",
+                  latitude: 52.7721,
+                  longitude: -1.2062,
+                },
+                geoRadius: 4000000,
+              },
+
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "Customer Support",
+                email: "info@legxcysol.dev",
+                url: "https://legxcysol.dev#contact",
+              },
+              sameAs: ["https://legxcysol.dev"],
+            }),
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <LenisProvider>
           <Navbar />
