@@ -16,10 +16,10 @@ type ContactFormData = {
   website?: string; // honeypot
 };
 
-// Extend Window to include the Turnstile callback
+// Add global TS support for the Turnstile callback
 declare global {
   interface Window {
-    turnstileCallback?: () => void;
+    turnstileCallback?: (token: string) => void;
   }
 }
 
@@ -34,37 +34,32 @@ export default function Contact() {
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
 
+  // Set up the global callback Turnstile uses
   useEffect(() => {
-    window.turnstileCallback = () => {
-      const widget = document.querySelector(".cf-turnstile");
-      if (!widget) return;
-
-      widget.addEventListener("turnstile-callback", (e) => {
-        const customEvent = e as CustomEvent<{ token: string }>;
-        setToken(customEvent.detail?.token ?? "");
-      });
+    window.turnstileCallback = (token: string) => {
+      setToken(token);
     };
   }, []);
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website || !token) return;
+    if (data.website || !token) return; // Bot or invalid
 
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
-        body: JSON.stringify({ ...data, token }),
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, token }),
       });
 
       if (!res.ok) throw new Error("Failed to send message");
 
       toast.success("Message sent successfully!");
       setSent(true);
-      setTimeout(() => {
-        setSent(false);
-        reset();
-      }, 3000);
-    } catch {
+      reset();
+      setToken("");
+
+      setTimeout(() => setSent(false), 3000);
+    } catch (err) {
       toast.error("Something went wrong. Please try again.");
     }
   };
@@ -75,9 +70,9 @@ export default function Contact() {
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center"
       style={{ backgroundColor: "var(--mossy-bg)", color: "var(--foreground)" }}
     >
-      {/* Cloudflare Turnstile script */}
+      {/* Cloudflare Turnstile Script */}
       <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=turnstileCallback"
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="afterInteractive"
         async
         defer
@@ -101,8 +96,7 @@ export default function Contact() {
         className="text-lg max-w-2xl mx-auto text-[color:var(--foreground)] mb-10"
       >
         Whether you’re ready to launch a project or simply exploring ideas, I’d
-        love to hear from you. Let’s have a conversation about turning your
-        goals into a bespoke digital solution.
+        love to hear from you.
       </motion.p>
 
       <form
@@ -123,6 +117,9 @@ export default function Contact() {
           placeholder="Your Name"
           {...register("name", { required: true })}
           className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
+          autoComplete="name"
+          id="name"
+          name="name"
         />
         {errors.name && (
           <span className="text-red-400 text-sm">Name is required</span>
@@ -133,6 +130,9 @@ export default function Contact() {
           placeholder="Your Email"
           {...register("email", { required: true })}
           className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
+          autoComplete="email"
+          id="email"
+          name="email"
         />
         {errors.email && (
           <span className="text-red-400 text-sm">Valid email is required</span>
@@ -143,13 +143,17 @@ export default function Contact() {
           {...register("message", { required: true })}
           rows={5}
           className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
+          autoComplete="off"
+          id="message"
+          name="message"
         />
         {errors.message && (
           <span className="text-red-400 text-sm">Message is required</span>
         )}
 
+        {/* Turnstile Mount */}
         <div
-          className="cf-turnstile text-center"
+          className="cf-turnstile mx-auto"
           data-sitekey={TURNSTILE_SITE_KEY}
           data-callback="turnstileCallback"
         />
@@ -163,12 +167,12 @@ export default function Contact() {
         </button>
       </form>
 
+      {/* Social Icons */}
       <div className="flex justify-center items-center gap-6 mt-10">
         <motion.a
           whileHover={{ scale: 1.1, rotate: 2 }}
           whileTap={{ scale: 0.95 }}
           href="mailto:info@legxcysol.dev"
-          title="Send an Email"
           className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition duration-200"
         >
           <FaEnvelope size={28} />
@@ -180,7 +184,6 @@ export default function Contact() {
           href="https://t.me/kufiii"
           target="_blank"
           rel="noopener noreferrer"
-          title="Message on Telegram"
           className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition duration-200"
         >
           <FaTelegramPlane size={28} />
@@ -192,7 +195,6 @@ export default function Contact() {
           href="https://wa.me/447597866002"
           target="_blank"
           rel="noopener noreferrer"
-          title="Chat on WhatsApp"
           className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition duration-200"
         >
           <FaWhatsapp size={28} />
