@@ -57,7 +57,7 @@ export default function Contact() {
       setToken("");
 
       setTimeout(() => setSent(false), 3000);
-    } catch (err) {
+    } catch {
       toast.error("Something went wrong. Please try again.");
     }
   };
