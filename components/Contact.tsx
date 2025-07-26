@@ -16,7 +16,6 @@ type ContactFormData = {
   website?: string; // honeypot
 };
 
-// Add global TS support for the Turnstile callback
 declare global {
   interface Window {
     turnstileCallback?: (token: string) => void;
@@ -34,7 +33,6 @@ export default function Contact() {
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
 
-  // Set up the global callback Turnstile uses
   useEffect(() => {
     window.turnstileCallback = (token: string) => {
       setToken(token);
@@ -42,7 +40,7 @@ export default function Contact() {
   }, []);
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website || !token) return; // Bot or invalid
+    if (data.website || !token) return;
 
     try {
       const res = await fetch("/api/contact", {
@@ -103,55 +101,65 @@ export default function Contact() {
         onSubmit={handleSubmit(onSubmit)}
         className="max-w-xl mx-auto grid gap-4 text-left"
       >
-        {/* Honeypot field */}
+        {/* Honeypot */}
         <input
           type="text"
+          id="website"
+          name="website"
           {...register("website")}
           autoComplete="off"
           tabIndex={-1}
           style={{ display: "none" }}
         />
 
+        <label htmlFor="name" className="sr-only">
+          Your Name
+        </label>
         <input
           type="text"
-          placeholder="Your Name"
-          {...register("name", { required: true })}
-          className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
-          autoComplete="name"
           id="name"
           name="name"
+          placeholder="Your Name"
+          autoComplete="name"
+          {...register("name", { required: true })}
+          className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
         />
         {errors.name && (
           <span className="text-red-400 text-sm">Name is required</span>
         )}
 
+        <label htmlFor="email" className="sr-only">
+          Your Email
+        </label>
         <input
           type="email"
-          placeholder="Your Email"
-          {...register("email", { required: true })}
-          className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
-          autoComplete="email"
           id="email"
           name="email"
+          placeholder="Your Email"
+          autoComplete="email"
+          {...register("email", { required: true })}
+          className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
         />
         {errors.email && (
           <span className="text-red-400 text-sm">Valid email is required</span>
         )}
 
+        <label htmlFor="message" className="sr-only">
+          Your Message
+        </label>
         <textarea
-          placeholder="Your Message"
-          {...register("message", { required: true })}
-          rows={5}
-          className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
-          autoComplete="off"
           id="message"
           name="message"
+          placeholder="Your Message"
+          autoComplete="off"
+          rows={5}
+          {...register("message", { required: true })}
+          className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
         />
         {errors.message && (
           <span className="text-red-400 text-sm">Message is required</span>
         )}
 
-        {/* Turnstile Mount */}
         <div
           className="cf-turnstile mx-auto"
           data-sitekey={TURNSTILE_SITE_KEY}
@@ -167,7 +175,6 @@ export default function Contact() {
         </button>
       </form>
 
-      {/* Social Icons */}
       <div className="flex justify-center items-center gap-6 mt-10">
         <motion.a
           whileHover={{ scale: 1.1, rotate: 2 }}
