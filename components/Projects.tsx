@@ -37,7 +37,7 @@ const projects = [
     name: "Pollards",
     desc: "A full stack appointment management system",
     video: "/projects/pollards.mp4",
-    link: "https://",
+    link: "https://pollards.vercel.app",
   },
 ];
 
