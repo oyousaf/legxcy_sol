@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
 import Script from "next/script";
 import { Inter, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -125,6 +126,7 @@ export default function RootLayout({
           <main className="pt-20">{children}</main>
           <Footer />
         </LenisProvider>
+        <Analytics />
       </body>
     </html>
   );
