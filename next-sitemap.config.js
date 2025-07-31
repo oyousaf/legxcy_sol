@@ -1,6 +1,5 @@
-import { IConfig } from "next-sitemap";
-
-const config: IConfig = {
+/** @type {import('next-sitemap').IConfig} */
+module.exports = {
   siteUrl: "https://legxcysol.dev",
   generateRobotsTxt: true,
   sitemapSize: 7000,
@@ -16,5 +15,3 @@ const config: IConfig = {
     ],
   },
 };
-
-export default config;
