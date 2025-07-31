@@ -40,7 +40,7 @@ export default function Hero() {
       >
         <div className="flex justify-center mb-4">
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="Legxcy Solutions Logo"
             width={80}
             height={80}
