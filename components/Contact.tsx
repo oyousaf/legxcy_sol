@@ -42,7 +42,6 @@ export default function Contact() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !scriptLoaded) {
-          // Dynamically load Turnstile script
           const script = document.createElement("script");
           script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
           script.async = true;
@@ -98,8 +97,10 @@ export default function Contact() {
     <section
       id="contact"
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
+      aria-labelledby="contact-heading"
     >
       <motion.h2
+        id="contact-heading"
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -134,6 +135,7 @@ export default function Contact() {
           autoComplete="off"
           tabIndex={-1}
           style={{ display: "none" }}
+          aria-hidden="true"
         />
 
         {/* Name */}
@@ -147,7 +149,8 @@ export default function Contact() {
             {...register("name", { required: true })}
             autoComplete="name"
             placeholder="Your Name"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 
+                       focus:outline-none focus:ring-2 focus:ring-green-400"
           />
           {errors.name && (
             <span className="text-red-400 text-sm">Name is required</span>
@@ -165,12 +168,11 @@ export default function Contact() {
             {...register("email", { required: true })}
             autoComplete="email"
             placeholder="Your Email"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 
+                       focus:outline-none focus:ring-2 focus:ring-green-400"
           />
           {errors.email && (
-            <span className="text-red-400 text-sm">
-              Valid email is required
-            </span>
+            <span className="text-red-400 text-sm">Valid email is required</span>
           )}
         </motion.div>
 
@@ -184,7 +186,8 @@ export default function Contact() {
             {...register("message", { required: true })}
             rows={5}
             placeholder="Your Message"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 
+                       focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
           />
           {errors.message && (
             <span className="text-red-400 text-sm">Message is required</span>
@@ -198,23 +201,37 @@ export default function Contact() {
           type="submit"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
-          className="w-full mt-2 px-6 py-3 bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md hover:brightness-110 disabled:opacity-50"
+          className="w-full mt-2 px-6 py-3 text-white bg-[color:var(--accent-green)] cursor-pointer rounded-md font-semibold shadow-md 
+                     transition focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2
+                     disabled:opacity-50"
         >
           {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
         </motion.button>
       </form>
 
       <div className="flex justify-center gap-6 mt-10">
-        <a href="mailto:info@legxcysol.dev">
+        <a
+          href="mailto:info@legxcysol.dev"
+          aria-label="Send us an email"
+          className="text-white hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded-full p-2"
+        >
           <FaEnvelope size={24} />
         </a>
-        <a href="https://t.me/kufiii" target="_blank" rel="noopener noreferrer">
+        <a
+          href="https://t.me/kufiii"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Chat with us on Telegram"
+          className="text-white hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded-full p-2"
+        >
           <FaTelegramPlane size={24} />
         </a>
         <a
           href="https://wa.me/447597866002"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Message us on WhatsApp"
+          className="text-white hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded-full p-2"
         >
           <FaWhatsapp size={24} />
         </a>

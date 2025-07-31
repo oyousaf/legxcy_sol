@@ -21,10 +21,11 @@ export default function Hero() {
     <section
       id="home"
       className="relative w-full h-screen flex items-center justify-center text-white"
+      aria-label="Hero section introducing Legxcy Solutions"
     >
       <Image
         src="/banner.webp"
-        alt="Banner"
+        alt="Legxcy Solutions hero banner"
         fill
         priority
         style={{ objectFit: "cover" }}
@@ -59,7 +60,7 @@ export default function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 1 }}
-          className="mt-4 text-lg text-gray-200"
+          className="mt-4 text-lg text-gray-100"
         >
           Bespoke websites engineered for performance and clarity — responsive
           by design, and built to elevate your digital presence.
@@ -69,7 +70,17 @@ export default function Hero() {
           onClick={handleSmoothScroll}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="inline-block mt-6 px-6 py-3 bg-[color:var(--accent-green)] cursor-pointer text-white rounded-md font-semibold shadow-md transition"
+          className="inline-block mt-6 px-6 py-3 cursor-pointer text-white rounded-md font-semibold shadow-md transition 
+          focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2"
+          style={{
+            backgroundColor: "#0f2f23",
+          }}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = "#144f39")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = "#0f2f23")
+          }
         >
           Request a Free Audit
         </motion.button>
