@@ -150,7 +150,7 @@ export default function Contact() {
             autoComplete="name"
             placeholder="Your Name"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 
-                       focus:outline-none focus:ring-2 focus:ring-green-400"
+                       focus:outline-none focus:ring-2 focus:[color:var(--accent-green)]"
           />
           {errors.name && (
             <span className="text-red-400 text-sm">Name is required</span>
@@ -169,7 +169,7 @@ export default function Contact() {
             autoComplete="email"
             placeholder="Your Email"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 
-                       focus:outline-none focus:ring-2 focus:ring-green-400"
+                       focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
           />
           {errors.email && (
             <span className="text-red-400 text-sm">
@@ -189,7 +189,7 @@ export default function Contact() {
             rows={5}
             placeholder="Your Message"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 
-                       focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
+                       focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] resize-none"
           />
           {errors.message && (
             <span className="text-red-400 text-sm">Message is required</span>

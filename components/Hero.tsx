@@ -71,16 +71,7 @@ export default function Hero() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="inline-block mt-6 px-6 py-3 cursor-pointer text-white rounded-md font-semibold shadow-md transition 
-          focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2"
-          style={{
-            backgroundColor: "#0f2f23",
-          }}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor = "#144f39")
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = "#0f2f23")
-          }
+          focus:outline-none focus:ring-2 bg-[color:var(--accent-green)] focus:ring-[color:var(--accent-green)] focus:ring-offset-2"
         >
           Request a Free Audit
         </motion.button>
