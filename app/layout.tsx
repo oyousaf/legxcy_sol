@@ -8,15 +8,8 @@ import Script from "next/script";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Legxcy Solutions",
@@ -39,9 +32,7 @@ export const metadata: Metadata = {
     "High-performance websites",
   ],
   metadataBase: new URL("https://legxcysol.dev"),
-  alternates: {
-    canonical: "/",
-  },
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Legxcy Solutions",
     description: "Bespoke websites crafted for impact.",
@@ -64,9 +55,13 @@ export const metadata: Metadata = {
     description: "Where Vision Meets Innovation",
     images: ["/og-image.jpg"],
   },
-  icons: {
-    icon: "/favicon.ico",
-  },
+  icons: { icon: "/favicon.ico" },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0f2f23",
 };
 
 export default function RootLayout({
@@ -92,21 +87,10 @@ export default function RootLayout({
               image: "https://legxcysol.dev/og-image.jpg",
               description:
                 "Freelance web development service offering bespoke, modern, high-performance websites for UK and EMEA businesses.",
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: "Loughborough",
-                addressCountry: "GB",
-              },
-              areaServed: {
-                "@type": "GeoCircle",
-                geoMidpoint: {
-                  "@type": "GeoCoordinates",
-                  latitude: 52.7721,
-                  longitude: -1.2062,
-                },
-                geoRadius: 4000000,
-              },
-
+              areaServed: [
+                "United Kingdom",
+                "Europe, Middle East, and Africa (EMEA)",
+              ],
               contactPoint: {
                 "@type": "ContactPoint",
                 contactType: "Customer Support",
