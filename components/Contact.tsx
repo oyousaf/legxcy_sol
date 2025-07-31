@@ -13,11 +13,15 @@ type ContactFormData = {
   name: string;
   email: string;
   message: string;
-  website?: string; // honeypot
+  website?: string;
 };
 
 declare global {
   interface Window {
+    turnstile?: {
+      render: (id: string, options: any) => void;
+      reset: (id: string) => void;
+    };
     turnstileCallback?: (token: string) => void;
   }
 }
@@ -33,12 +37,38 @@ export default function Contact() {
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
 
+  // Ref to widget
+  const widgetId = "cf-turnstile-widget";
+
   useEffect(() => {
     window.turnstileCallback = (token: string) => setToken(token);
+
+    // Fallback script loader
+    if (!document.querySelector("script[src*='turnstile']")) {
+      const script = document.createElement("script");
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+
+    // Auto-refresh token every 110 seconds
+    const refreshInterval = setInterval(() => {
+      if (window.turnstile && document.getElementById(widgetId)) {
+        window.turnstile.reset(widgetId);
+        setToken("");
+      }
+    }, 110000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website || !token) return;
+    if (data.website) return;
+    if (!token) {
+      toast.error("Please complete the verification again.");
+      return;
+    }
 
     try {
       const res = await fetch("/api/contact", {
@@ -64,7 +94,7 @@ export default function Contact() {
       id="contact"
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
     >
-      {/* Load Turnstile script without manual preload */}
+      {/* Turnstile Script */}
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="lazyOnload"
@@ -98,7 +128,7 @@ export default function Contact() {
         className="max-w-xl mx-auto grid gap-4 text-left"
         aria-label="Contact Form"
       >
-        {/* Honeypot field */}
+        {/* Honeypot */}
         <input
           type="text"
           id="website"
@@ -128,6 +158,8 @@ export default function Contact() {
           />
           {errors.name && (
             <motion.span
+              role="alert"
+              aria-live="polite"
               className="text-red-400 text-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -157,6 +189,8 @@ export default function Contact() {
           />
           {errors.email && (
             <motion.span
+              role="alert"
+              aria-live="polite"
               className="text-red-400 text-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -180,11 +214,14 @@ export default function Contact() {
             id="message"
             {...register("message", { required: true })}
             rows={5}
+            autoComplete="on"
             placeholder="Your Message"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
           />
           {errors.message && (
             <motion.span
+              role="alert"
+              aria-live="polite"
               className="text-red-400 text-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -196,6 +233,7 @@ export default function Contact() {
 
         {/* Turnstile Widget */}
         <div
+          id={widgetId}
           className="cf-turnstile mx-auto"
           data-sitekey={TURNSTILE_SITE_KEY}
           data-callback="turnstileCallback"
@@ -203,6 +241,7 @@ export default function Contact() {
 
         <motion.button
           type="submit"
+          aria-label="Send contact form message"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
           className="w-full mt-2 px-6 py-3 cursor-pointer bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md transition hover:brightness-110 disabled:opacity-50"
@@ -223,6 +262,7 @@ export default function Contact() {
           whileHover={{ scale: 1.1, rotate: 2 }}
           whileTap={{ scale: 0.95 }}
           href="mailto:info@legxcysol.dev"
+          aria-label="Send email to Legxcy Solutions"
           className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition"
         >
           <FaEnvelope size={24} />
@@ -233,6 +273,7 @@ export default function Contact() {
           href="https://t.me/kufiii"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Contact Legxcy Solutions on Telegram"
           className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition"
         >
           <FaTelegramPlane size={24} />
@@ -243,6 +284,7 @@ export default function Contact() {
           href="https://wa.me/447597866002"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Contact Legxcy Solutions on WhatsApp"
           className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition"
         >
           <FaWhatsapp size={24} />
