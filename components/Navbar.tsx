@@ -79,7 +79,13 @@ export default function Navbar() {
           className="flex items-center gap-2"
           aria-label="Go to Home"
         >
-          <Image src="/logo.png" alt="Legxcy Logo" width={40} height={40} />
+          <Image
+            src="/logo.png"
+            alt="Legxcy Logo"
+            width={40}
+            height={40}
+            priority
+          />
           <span className="text-lg font-semibold text-white">
             Legxcy Solutions
           </span>
