@@ -80,7 +80,7 @@ export default function Navbar() {
           aria-label="Go to Home"
         >
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="Legxcy Logo"
             width={40}
             height={40}
