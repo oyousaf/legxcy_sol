@@ -1,22 +1,16 @@
 "use client";
 
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import Script from "next/script";
 import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
-
-// Type-safe Turnstile
-interface Turnstile {
-  render: (id: string, options: Record<string, unknown>) => void;
-  reset: (id: string) => void;
-}
 
 declare global {
   interface Window {
-    turnstile?: Turnstile;
-    turnstileCallback?: (token: string) => void;
+    turnstile?: {
+      render: (el: HTMLElement, options: Record<string, unknown>) => void;
+    };
   }
 }
 
@@ -39,38 +33,45 @@ export default function Contact() {
 
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  const widgetId = "cf-turnstile-widget";
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const widgetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    window.turnstileCallback = (token: string) => setToken(token);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !scriptLoaded) {
+          // Dynamically load Turnstile script
+          const script = document.createElement("script");
+          script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+          script.async = true;
+          script.defer = true;
+          script.onload = () => {
+            setScriptLoaded(true);
+            if (window.turnstile && widgetRef.current) {
+              window.turnstile.render(widgetRef.current, {
+                sitekey: TURNSTILE_SITE_KEY,
+                callback: (t: string) => setToken(t),
+              });
+            }
+          };
+          document.body.appendChild(script);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
 
-    if (!document.querySelector("script[src*='turnstile']")) {
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
+    if (formRef.current) observer.observe(formRef.current);
 
-    // auto-refresh token ~110s
-    const refreshInterval = setInterval(() => {
-      if (window.turnstile && document.getElementById(widgetId)) {
-        setRefreshing(true);
-        window.turnstile.reset(widgetId);
-        setToken("");
-        setTimeout(() => setRefreshing(false), 1500);
-      }
-    }, 110000);
-
-    return () => clearInterval(refreshInterval);
-  }, []);
+    return () => observer.disconnect();
+  }, [scriptLoaded]);
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website) return;
+    if (data.website) return; // honeypot
     if (!token) {
-      toast.error("Please complete the verification again.");
+      toast.error("Please complete the verification.");
       return;
     }
 
@@ -96,15 +97,8 @@ export default function Contact() {
   return (
     <section
       id="contact"
-      className="relative min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
+      className="min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
     >
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        strategy="lazyOnload"
-        async
-        defer
-      />
-
       <motion.h2
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -127,6 +121,7 @@ export default function Contact() {
       </motion.p>
 
       <form
+        ref={formRef}
         onSubmit={handleSubmit(onSubmit)}
         className="max-w-xl mx-auto grid gap-4 text-left"
         aria-label="Contact Form"
@@ -142,12 +137,7 @@ export default function Contact() {
         />
 
         {/* Name */}
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-          viewport={{ once: true }}
-        >
+        <motion.div>
           <label htmlFor="name" className="sr-only">
             Your Name
           </label>
@@ -160,23 +150,12 @@ export default function Contact() {
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
           />
           {errors.name && (
-            <motion.span
-              role="alert"
-              aria-live="polite"
-              className="text-red-400 text-sm"
-            >
-              Name is required
-            </motion.span>
+            <span className="text-red-400 text-sm">Name is required</span>
           )}
         </motion.div>
 
         {/* Email */}
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          viewport={{ once: true }}
-        >
+        <motion.div>
           <label htmlFor="email" className="sr-only">
             Your Email
           </label>
@@ -189,23 +168,14 @@ export default function Contact() {
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
           />
           {errors.email && (
-            <motion.span
-              role="alert"
-              aria-live="polite"
-              className="text-red-400 text-sm"
-            >
+            <span className="text-red-400 text-sm">
               Valid email is required
-            </motion.span>
+            </span>
           )}
         </motion.div>
 
         {/* Message */}
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          viewport={{ once: true }}
-        >
+        <motion.div>
           <label htmlFor="message" className="sr-only">
             Your Message
           </label>
@@ -213,87 +183,42 @@ export default function Contact() {
             id="message"
             {...register("message", { required: true })}
             rows={5}
-            autoComplete="on"
             placeholder="Your Message"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
           />
           {errors.message && (
-            <motion.span
-              role="alert"
-              aria-live="polite"
-              className="text-red-400 text-sm"
-            >
-              Message is required
-            </motion.span>
+            <span className="text-red-400 text-sm">Message is required</span>
           )}
         </motion.div>
 
-        {/* Turnstile Widget with subtle refresh animation */}
-        <motion.div
-          id={widgetId}
-          className="cf-turnstile mx-auto"
-          data-sitekey={TURNSTILE_SITE_KEY}
-          data-callback="turnstileCallback"
-          transition={{ duration: 0.3 }}
-        />
+        {/* Turnstile placeholder */}
+        <div ref={widgetRef} className="text-center min-h-[70px]" />
 
         <motion.button
           type="submit"
-          aria-label="Send contact form message"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
-          className="w-full mt-2 px-6 py-3 cursor-pointer bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md transition hover:brightness-110 disabled:opacity-50"
+          className="w-full mt-2 px-6 py-3 bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md hover:brightness-110 disabled:opacity-50"
         >
-          {isSubmitting
-            ? "Sending..."
-            : sent
-              ? "Sent!"
-              : refreshing
-                ? "Refreshing..."
-                : "Send Message"}
+          {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
         </motion.button>
       </form>
 
-      {/* Contact Icons */}
-      <motion.div
-        className="flex justify-center items-center gap-6 mt-10"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        viewport={{ once: true }}
-      >
-        <motion.a
-          whileHover={{ scale: 1.1, rotate: 2 }}
-          whileTap={{ scale: 0.95 }}
-          href="mailto:info@legxcysol.dev"
-          aria-label="Send email to Legxcy Solutions"
-          className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition"
-        >
+      <div className="flex justify-center gap-6 mt-10">
+        <a href="mailto:info@legxcysol.dev">
           <FaEnvelope size={24} />
-        </motion.a>
-        <motion.a
-          whileHover={{ scale: 1.1, rotate: 2 }}
-          whileTap={{ scale: 0.95 }}
-          href="https://t.me/kufiii"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Contact Legxcy Solutions on Telegram"
-          className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition"
-        >
+        </a>
+        <a href="https://t.me/kufiii" target="_blank" rel="noopener noreferrer">
           <FaTelegramPlane size={24} />
-        </motion.a>
-        <motion.a
-          whileHover={{ scale: 1.1, rotate: 2 }}
-          whileTap={{ scale: 0.95 }}
+        </a>
+        <a
           href="https://wa.me/447597866002"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Contact Legxcy Solutions on WhatsApp"
-          className="p-4 rounded-full bg-[color:var(--accent-green)] text-white shadow-lg hover:shadow-xl transition"
         >
           <FaWhatsapp size={24} />
-        </motion.a>
-      </motion.div>
+        </a>
+      </div>
     </section>
   );
 }
