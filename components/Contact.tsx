@@ -20,7 +20,7 @@ type ContactFormData = {
   name: string;
   email: string;
   message: string;
-  website?: string; // honeypot
+  website?: string;
 };
 
 export default function Contact() {
@@ -68,7 +68,7 @@ export default function Contact() {
   }, [scriptLoaded]);
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website) return; // honeypot
+    if (data.website) return;
     if (!token) {
       toast.error("Please complete the verification.");
       return;
@@ -172,7 +172,9 @@ export default function Contact() {
                        focus:outline-none focus:ring-2 focus:ring-green-400"
           />
           {errors.email && (
-            <span className="text-red-400 text-sm">Valid email is required</span>
+            <span className="text-red-400 text-sm">
+              Valid email is required
+            </span>
           )}
         </motion.div>
 
@@ -201,8 +203,8 @@ export default function Contact() {
           type="submit"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
-          className="w-full mt-2 px-6 py-3 text-white bg-[color:var(--accent-green)] cursor-pointer rounded-md font-semibold shadow-md 
-                     transition focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2
+          className="w-full mt-2 px-6 py-3 text-white bg-[color:var(--dark-mint)] cursor-pointer rounded-md font-semibold shadow-md 
+                     transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] focus:ring-offset-2
                      disabled:opacity-50"
         >
           {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
@@ -213,7 +215,7 @@ export default function Contact() {
         <a
           href="mailto:info@legxcysol.dev"
           aria-label="Send us an email"
-          className="text-white hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded-full p-2"
+          className="text-white hover:[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] rounded-full p-2"
         >
           <FaEnvelope size={24} />
         </a>
@@ -222,7 +224,7 @@ export default function Contact() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat with us on Telegram"
-          className="text-white hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded-full p-2"
+          className="text-white hover:text-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] rounded-full p-2"
         >
           <FaTelegramPlane size={24} />
         </a>
@@ -231,7 +233,7 @@ export default function Contact() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Message us on WhatsApp"
-          className="text-white hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded-full p-2"
+          className="text-white hover:text-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] rounded-full p-2"
         >
           <FaWhatsapp size={24} />
         </a>
