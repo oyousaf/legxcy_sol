@@ -53,7 +53,6 @@ export default function Contact() {
       setSent(true);
       reset();
       setToken("");
-
       setTimeout(() => setSent(false), 3000);
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -65,9 +64,10 @@ export default function Contact() {
       id="contact"
       className="min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
     >
+      {/* Load Turnstile script without manual preload */}
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         async
         defer
       />
@@ -98,6 +98,7 @@ export default function Contact() {
         className="max-w-xl mx-auto grid gap-4 text-left"
         aria-label="Contact Form"
       >
+        {/* Honeypot field */}
         <input
           type="text"
           id="website"
@@ -122,7 +123,6 @@ export default function Contact() {
             id="name"
             {...register("name", { required: true })}
             autoComplete="name"
-            name="name"
             placeholder="Your Name"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
           />
@@ -152,7 +152,6 @@ export default function Contact() {
             id="email"
             {...register("email", { required: true })}
             autoComplete="email"
-            name="email"
             placeholder="Your Email"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none"
           />
@@ -180,8 +179,6 @@ export default function Contact() {
           <textarea
             id="message"
             {...register("message", { required: true })}
-            autoComplete="off"
-            name="message"
             rows={5}
             placeholder="Your Message"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:outline-none resize-none"
@@ -230,7 +227,6 @@ export default function Contact() {
         >
           <FaEnvelope size={24} />
         </motion.a>
-
         <motion.a
           whileHover={{ scale: 1.1, rotate: 2 }}
           whileTap={{ scale: 0.95 }}
@@ -241,7 +237,6 @@ export default function Contact() {
         >
           <FaTelegramPlane size={24} />
         </motion.a>
-
         <motion.a
           whileHover={{ scale: 1.1, rotate: 2 }}
           whileTap={{ scale: 0.95 }}
