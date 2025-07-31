@@ -73,6 +73,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Preload Logo & Main Font */}
+        <link
+          rel="preload"
+          href="/logo.png"
+          as="image"
+          type="image/png"
+          fetchPriority="high"
+        />
+        <link
+          rel="preload"
+          href="https://fonts.gstatic.com/s/inter/v15/UcCO3FwrqR9j4yY.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+
         {/* Structured Data for SEO */}
         <Script
           id="structured-data"
@@ -104,6 +120,7 @@ export default function RootLayout({
           }}
         />
       </head>
+
       <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <LenisProvider>
           <Navbar />
