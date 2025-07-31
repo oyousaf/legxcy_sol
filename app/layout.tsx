@@ -83,7 +83,7 @@ export default function RootLayout({
         {/* Preload Logo */}
         <link
           rel="preload"
-          href="/logo.png"
+          href="/logo.webp"
           as="image"
           type="image/png"
           fetchPriority="high"
@@ -100,7 +100,7 @@ export default function RootLayout({
               "@type": "ProfessionalService",
               name: "Legxcy Solutions",
               url: "https://legxcysol.dev",
-              logo: "https://legxcysol.dev/logo.png",
+              logo: "https://legxcysol.dev/logo.webp",
               image: "https://legxcysol.dev/og-image.jpg",
               description:
                 "Freelance web development service offering bespoke, modern, high-performance websites for UK and EMEA businesses.",
