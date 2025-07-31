@@ -7,24 +7,27 @@ import { motion } from "framer-motion";
 import Script from "next/script";
 import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
+// Type-safe Turnstile
+interface Turnstile {
+  render: (id: string, options: Record<string, unknown>) => void;
+  reset: (id: string) => void;
+}
+
+declare global {
+  interface Window {
+    turnstile?: Turnstile;
+    turnstileCallback?: (token: string) => void;
+  }
+}
+
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
 
 type ContactFormData = {
   name: string;
   email: string;
   message: string;
-  website?: string;
+  website?: string; // honeypot
 };
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (id: string, options: any) => void;
-      reset: (id: string) => void;
-    };
-    turnstileCallback?: (token: string) => void;
-  }
-}
 
 export default function Contact() {
   const {
@@ -36,14 +39,13 @@ export default function Contact() {
 
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Ref to widget
   const widgetId = "cf-turnstile-widget";
 
   useEffect(() => {
     window.turnstileCallback = (token: string) => setToken(token);
 
-    // Fallback script loader
     if (!document.querySelector("script[src*='turnstile']")) {
       const script = document.createElement("script");
       script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
@@ -52,11 +54,13 @@ export default function Contact() {
       document.body.appendChild(script);
     }
 
-    // Auto-refresh token every 110 seconds
+    // auto-refresh token ~110s
     const refreshInterval = setInterval(() => {
       if (window.turnstile && document.getElementById(widgetId)) {
+        setRefreshing(true);
         window.turnstile.reset(widgetId);
         setToken("");
+        setTimeout(() => setRefreshing(false), 1500);
       }
     }, 110000);
 
@@ -92,9 +96,8 @@ export default function Contact() {
   return (
     <section
       id="contact"
-      className="min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
+      className="relative min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
     >
-      {/* Turnstile Script */}
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="lazyOnload"
@@ -138,7 +141,7 @@ export default function Contact() {
           style={{ display: "none" }}
         />
 
-        {/* Name Field */}
+        {/* Name */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -161,15 +164,13 @@ export default function Contact() {
               role="alert"
               aria-live="polite"
               className="text-red-400 text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
             >
               Name is required
             </motion.span>
           )}
         </motion.div>
 
-        {/* Email Field */}
+        {/* Email */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -192,15 +193,13 @@ export default function Contact() {
               role="alert"
               aria-live="polite"
               className="text-red-400 text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
             >
               Valid email is required
             </motion.span>
           )}
         </motion.div>
 
-        {/* Message Field */}
+        {/* Message */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -223,20 +222,19 @@ export default function Contact() {
               role="alert"
               aria-live="polite"
               className="text-red-400 text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
             >
               Message is required
             </motion.span>
           )}
         </motion.div>
 
-        {/* Turnstile Widget */}
-        <div
+        {/* Turnstile Widget with subtle refresh animation */}
+        <motion.div
           id={widgetId}
           className="cf-turnstile mx-auto"
           data-sitekey={TURNSTILE_SITE_KEY}
           data-callback="turnstileCallback"
+          transition={{ duration: 0.3 }}
         />
 
         <motion.button
@@ -246,7 +244,13 @@ export default function Contact() {
           whileTap={{ scale: 0.97 }}
           className="w-full mt-2 px-6 py-3 cursor-pointer bg-[color:var(--accent-green)] text-white rounded-md font-semibold shadow-md transition hover:brightness-110 disabled:opacity-50"
         >
-          {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
+          {isSubmitting
+            ? "Sending..."
+            : sent
+              ? "Sent!"
+              : refreshing
+                ? "Refreshing..."
+                : "Send Message"}
         </motion.button>
       </form>
 
