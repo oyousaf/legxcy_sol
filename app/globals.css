@@ -44,5 +44,25 @@ body::-webkit-scrollbar {
 
 /* ─── Transitions ─────────────────────────────────────────────── */
 * {
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ─── Gradient shift ─────────────────────────────────────────────── */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 400% 400%;
+  animation: gradientShift 25s ease infinite;
 }

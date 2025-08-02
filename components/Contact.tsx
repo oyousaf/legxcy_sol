@@ -30,7 +30,6 @@ export default function Contact() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ContactFormData>();
-
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -38,6 +37,7 @@ export default function Contact() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const widgetRef = useRef<HTMLDivElement | null>(null);
 
+  // Lazy-load Turnstile when form comes into view
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -61,18 +61,14 @@ export default function Contact() {
       },
       { threshold: 0.3 }
     );
-
     if (formRef.current) observer.observe(formRef.current);
-
     return () => observer.disconnect();
   }, [scriptLoaded]);
 
+  // Handle form submission
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
     if (data.website) return;
-    if (!token) {
-      toast.error("Please complete the verification.");
-      return;
-    }
+    if (!token) return toast.error("Please complete the verification.");
 
     try {
       const res = await fetch("/api/contact", {
@@ -80,9 +76,7 @@ export default function Contact() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, token }),
       });
-
       if (!res.ok) throw new Error("Failed to send message");
-
       toast.success("Message sent successfully!");
       setSent(true);
       reset();
@@ -96,31 +90,34 @@ export default function Contact() {
   return (
     <section
       id="contact"
-      className="min-h-[60vh] px-6 sm:px-12 py-24 text-center bg-[color:var(--mossy-bg)] text-[color:var(--foreground)]"
-      aria-labelledby="contact-heading"
+      className="relative min-h-[60vh] px-6 sm:px-12 py-24 text-center overflow-hidden"
     >
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--mossy-bg)]/95 via-[color:var(--mossy-bg)]/85 to-[color:var(--dark-mint)]/95 -z-10" />
+
+      {/* Section heading */}
       <motion.h2
         id="contact-heading"
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-3xl sm:text-5xl font-bold mb-6"
+        className="text-3xl sm:text-5xl font-bold mb-6 text-white"
       >
         Let’s Build Something Remarkable
       </motion.h2>
-
       <motion.p
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-lg max-w-2xl mx-auto mb-10"
+        className="text-lg max-w-2xl mx-auto mb-10 text-[color:var(--foreground)]"
       >
         Whether you’re ready to launch a project or simply exploring ideas, we’d
         love to hear from you.
       </motion.p>
 
+      {/* Contact form */}
       <form
         ref={formRef}
         onSubmit={handleSubmit(onSubmit)}
@@ -149,8 +146,7 @@ export default function Contact() {
             {...register("name", { required: true })}
             autoComplete="name"
             placeholder="Your Name"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[color:var(--accent-green)]
-                       focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
           />
           {errors.name && (
             <span className="text-red-400 text-sm">Name is required</span>
@@ -168,8 +164,7 @@ export default function Contact() {
             {...register("email", { required: true })}
             autoComplete="email"
             placeholder="Your Email"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[color:var(--accent-green)] 
-                       focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
           />
           {errors.email && (
             <span className="text-red-400 text-sm">
@@ -188,29 +183,28 @@ export default function Contact() {
             {...register("message", { required: true })}
             rows={5}
             placeholder="Your Message"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-[color:var(--accent-green)]
-                       focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] resize-none"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] resize-none"
           />
           {errors.message && (
             <span className="text-red-400 text-sm">Message is required</span>
           )}
         </motion.div>
 
-        {/* Turnstile placeholder */}
+        {/* Turnstile widget */}
         <div ref={widgetRef} className="text-center min-h-[70px]" />
 
+        {/* Submit button */}
         <motion.button
           type="submit"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
-          className="w-full mt-2 px-6 py-3 text-white bg-[color:var(--dark-mint)] cursor-pointer rounded-md font-semibold shadow-md 
-                     transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] focus:ring-offset-2
-                     disabled:opacity-50"
+          className="w-full mt-2 px-6 py-3 text-white bg-[color:var(--dark-mint)] cursor-pointer rounded-md font-semibold shadow-md transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] focus:ring-offset-2 disabled:opacity-50"
         >
           {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
         </motion.button>
       </form>
 
+      {/* Social links */}
       <div className="flex justify-center gap-6 mt-10">
         <a
           href="mailto:info@legxcysol.dev"
