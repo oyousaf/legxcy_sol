@@ -55,7 +55,7 @@ export default function About() {
       id="about"
       className="relative min-h-screen px-6 sm:px-12 py-24 overflow-hidden"
     >
-      {/* Hybrid gradient overlay */}
+      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--dark-mint)]/95 via-[color:var(--dark-mint)]/85 to-[color:var(--mossy-bg)]/95 z-0" />
 
       {/* Floating parallax icons */}
