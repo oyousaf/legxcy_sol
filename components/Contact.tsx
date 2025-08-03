@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
+import * as gtag from "@/lib/gtag";
 
 declare global {
   interface Window {
@@ -77,6 +78,15 @@ export default function Contact() {
         body: JSON.stringify({ ...data, token }),
       });
       if (!res.ok) throw new Error("Failed to send message");
+
+      // ✅ Fire GA event for conversion tracking
+      gtag.event({
+        action: "form_submit",
+        category: "Contact",
+        label: "Contact Form",
+        value: 1,
+      });
+
       toast.success("Message sent successfully!");
       setSent(true);
       reset();
