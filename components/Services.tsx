@@ -97,6 +97,8 @@ export default function Services() {
     target: ref,
     offset: ["start end", "end start"],
   });
+
+  // Subtle parallax effect
   const y1 = useTransform(scrollYProgress, [0, 1], [0, 30]);
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -25]);
 
@@ -112,6 +114,7 @@ export default function Services() {
       {/* Section content */}
       <div className="max-w-7xl mx-auto text-center relative z-10">
         <motion.h2
+          style={{ y: y1 }}
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -120,7 +123,9 @@ export default function Services() {
         >
           Our Services
         </motion.h2>
+
         <motion.p
+          style={{ y: y2 }}
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
