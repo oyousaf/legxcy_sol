@@ -116,7 +116,7 @@ export default function Services() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-200 bg-clip-text text-transparent"
+          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
         >
           Our Services
         </motion.h2>

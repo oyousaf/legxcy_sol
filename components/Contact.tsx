@@ -102,7 +102,7 @@ export default function Contact() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-3xl sm:text-5xl font-bold mb-6 text-white"
+        className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
       >
         Let’s Build Something Remarkable
       </motion.h2>

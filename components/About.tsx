@@ -78,7 +78,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-300 bg-clip-text text-transparent"
+          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
         >
           About Us
         </motion.h2>
@@ -88,7 +88,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-lg sm:text-xl max-w-3xl mx-auto mb-14 text-[color:var(--foreground)] leading-relaxed"
+          className="text-lg sm:text-xl max-w-3xl mx-auto mb-16 text-[color:var(--foreground)] leading-relaxed"
         >
           We build sleek, high‑performance websites tailored to your brand’s
           identity. Whether launching a new venture or revitalising your digital
