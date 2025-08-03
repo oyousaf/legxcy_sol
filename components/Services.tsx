@@ -2,29 +2,82 @@
 
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { useRef } from "react";
-import { FaMobileAlt, FaRocket, FaCode, FaSearch } from "react-icons/fa";
+import {
+  FaLaptopCode,
+  FaGlobe,
+  FaPenNib,
+  FaMobileAlt,
+  FaSyncAlt,
+  FaSearch,
+  FaShoppingCart,
+  FaUsers,
+  FaTachometerAlt,
+  FaUniversalAccess,
+  FaUserTie,
+  FaTools,
+} from "react-icons/fa";
 
-// Services data
+// Full services list with unique icons
 const services = [
   {
+    icon: <FaLaptopCode size={32} />,
+    title: "Web Development",
+    desc: "End‑to‑end web development services using modern frameworks for fast, reliable results.",
+  },
+  {
+    icon: <FaGlobe size={32} />,
+    title: "Web Apps",
+    desc: "Interactive, custom web applications built for performance, scalability, and ease of use.",
+  },
+  {
+    icon: <FaPenNib size={32} />,
+    title: "Application Development",
+    desc: "Custom web and desktop applications built to meet your unique business needs.",
+  },
+  {
     icon: <FaMobileAlt size={32} />,
-    title: "Responsive Design",
-    desc: "Layouts that adapt seamlessly for a flawless experience on any device.",
+    title: "Responsive & Mobile‑First Web Design",
+    desc: "Websites that look and perform beautifully on mobiles, tablets, and desktops.",
   },
   {
-    icon: <FaRocket size={32} />,
-    title: "Performance Optimisation",
-    desc: "Lightning‑fast sites engineered for efficiency and user delight.",
-  },
-  {
-    icon: <FaCode size={32} />,
-    title: "Custom Development",
-    desc: "Bespoke solutions tailored to your goals with clean, scalable code.",
+    icon: <FaSyncAlt size={32} />,
+    title: "Website Redesign & Modernisation",
+    desc: "Refresh outdated websites with a sleek, fast, and user‑friendly design.",
   },
   {
     icon: <FaSearch size={32} />,
-    title: "SEO Integration",
-    desc: "Technical SEO strategies that elevate visibility and conversions.",
+    title: "SEO‑Optimised Business Websites",
+    desc: "Websites designed with built‑in SEO best practices to help you rank higher on Google.",
+  },
+  {
+    icon: <FaShoppingCart size={32} />,
+    title: "E‑commerce Websites",
+    desc: "Custom online stores with secure checkout and user‑friendly navigation.",
+  },
+  {
+    icon: <FaUsers size={32} />,
+    title: "UX/UI Design for Small Businesses",
+    desc: "Clean, intuitive interfaces that make browsing effortless for your customers.",
+  },
+  {
+    icon: <FaTachometerAlt size={32} />,
+    title: "Fast, High‑Performance Websites",
+    desc: "Optimised websites that load quickly and deliver smooth user experiences.",
+  },
+  {
+    icon: <FaUniversalAccess size={32} />,
+    title: "Website Accessibility Improvements",
+    desc: "Enhancing websites with accessibility features to meet modern web standards.",
+  },
+  {
+    icon: <FaUserTie size={32} />,
+    title: "Portfolio & Personal Branding Websites",
+    desc: "Showcase your work or personal brand with a professional, stylish website.",
+  },
+  {
+    icon: <FaTools size={32} />,
+    title: "Ongoing Website Maintenance & Support",
+    desc: "Reliable updates and technical support to keep your site secure and running smoothly.",
   },
 ];
 
@@ -55,20 +108,6 @@ export default function Services() {
     >
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--mossy-bg)]/95 via-[color:var(--mossy-bg)]/85 to-[color:var(--dark-mint)]/95 -z-10" />
-
-      {/* Floating parallax icons */}
-      <motion.div
-        style={{ y: y1 }}
-        className="absolute top-20 right-12 text-[color:var(--accent-green)] opacity-20 text-7xl pointer-events-none"
-      >
-        <FaRocket />
-      </motion.div>
-      <motion.div
-        style={{ y: y2 }}
-        className="absolute bottom-16 left-10 text-[color:var(--accent-green)] opacity-20 text-6xl pointer-events-none"
-      >
-        <FaCode />
-      </motion.div>
 
       {/* Section content */}
       <div className="max-w-7xl mx-auto text-center relative z-10">
@@ -107,7 +146,7 @@ export default function Services() {
                 boxShadow: "0px 14px 28px rgba(0,0,0,0.25)",
               }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-[color:var(--accent-green)] p-7 rounded-2xl shadow-xl transition-all duration-300 group"
+              className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-[color:var(--accent-green)] p-7 rounded-2xl shadow-xl transition-all duration-300 group text-center"
             >
               {/* Icon */}
               <div className="flex justify-center mb-4">
