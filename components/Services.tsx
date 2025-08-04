@@ -130,7 +130,7 @@ export default function Services() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-lg sm:text-xl max-w-2xl mx-auto mb-16 text-[color:var(--foreground)] leading-relaxed"
+          className="text-lg sm:text-xl max-w-2xl mx-auto mb-16 text-[var(--foreground)] leading-relaxed"
         >
           Transforming visions into high‑impact digital solutions — designed to
           inspire, perform, and scale with your business.
@@ -168,7 +168,7 @@ export default function Services() {
               <h3 className="text-xl font-semibold text-white mb-3">
                 {s.title}
               </h3>
-              <p className="text-[color:var(--foreground)] text-sm sm:text-base">
+              <p className="text-[var(--foreground)] text-sm sm:text-base">
                 {s.desc}
               </p>
             </motion.div>
