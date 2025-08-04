@@ -9,10 +9,10 @@ export default function Footer() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="relative w-full px-6 py-10 text-[color:var(--foreground)] overflow-hidden"
+      className="relative w-full px-6 py-10 text-[var(--foreground)] overflow-hidden"
     >
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--dark-mint)]/95 via-[color:var(--dark-mint)]/85 to-[color:var(--mossy-bg)]/95 -z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[var(--dark-mint)]/95 via-[var(--dark-mint)]/85 to-[var(--mossy-bg)]/95 -z-10" />
 
       {/* Footer content */}
       <div className="max-w-5xl mx-auto flex flex-col items-center text-center justify-center gap-3 relative z-10">

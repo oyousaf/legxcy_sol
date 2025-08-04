@@ -49,12 +49,10 @@ export default function WhatsAppBubble() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        className="flex items-center justify-center 
-                   w-14 h-14 rounded-full bg-green-500 shadow-lg 
-                   hover:bg-green-600 focus:outline-none 
+        className="flex items-center justify-center w-14 h-14 rounded-full bg-green-500 shadow-lg hover:bg-green-600 focus:outline-none 
                    focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
       >
-        <FaWhatsapp size={28} className="text-white" />
+        <FaWhatsapp size={30} className="text-white" />
       </motion.button>
     </div>
   );

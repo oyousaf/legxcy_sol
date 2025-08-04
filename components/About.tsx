@@ -56,18 +56,18 @@ export default function About() {
       className="relative min-h-screen px-6 sm:px-12 py-24 overflow-hidden"
     >
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--dark-mint)]/95 via-[color:var(--dark-mint)]/85 to-[color:var(--mossy-bg)]/95 z-0" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[var(--dark-mint)]/95 via-[var(--dark-mint)]/85 to-[var(--mossy-bg)]/95 z-0" />
 
       {/* Floating parallax icons */}
       <motion.div
         style={{ y: y1 }}
-        className="absolute top-16 left-6 text-[color:var(--accent-green)] opacity-25 text-6xl pointer-events-none"
+        className="absolute top-16 left-6 text-[var(--accent-green)] opacity-25 text-6xl pointer-events-none"
       >
         <FaBolt />
       </motion.div>
       <motion.div
         style={{ y: y2 }}
-        className="absolute bottom-20 right-10 text-[color:var(--accent-green)] opacity-20 text-7xl pointer-events-none"
+        className="absolute bottom-20 right-10 text-[var(--accent-green)] opacity-20 text-7xl pointer-events-none"
       >
         <FaLayerGroup />
       </motion.div>
@@ -78,7 +78,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
+          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
         >
           About Us
         </motion.h2>
@@ -88,7 +88,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-lg sm:text-xl max-w-3xl mx-auto mb-16 text-[color:var(--foreground)] leading-relaxed"
+          className="text-lg sm:text-xl max-w-3xl mx-auto mb-16 text-[var(--foreground)] leading-relaxed"
         >
           We build sleek, high‑performance websites tailored to your brand’s
           identity. Whether launching a new venture or revitalising your digital
@@ -110,13 +110,13 @@ export default function About() {
                 boxShadow: "0px 12px 24px rgba(0,0,0,0.25)",
               }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="relative bg-white/5 backdrop-blur-lg border border-white/10 hover:border-[color:var(--accent-green)] p-6 rounded-2xl shadow-lg transition-all duration-300 group"
+              className="relative bg-white/5 backdrop-blur-lg border border-white/10 hover:border-[var(--accent-green)] p-6 rounded-2xl shadow-lg transition-all duration-300 group"
             >
               <div className="flex justify-center mb-4">
                 <motion.div
                   whileHover={{ rotate: 3, y: -2 }}
                   transition={{ type: "spring", stiffness: 200, damping: 18 }}
-                  className="text-[color:var(--accent-green)]"
+                  className="text-[var(--accent-green)]"
                 >
                   {item.icon}
                 </motion.div>
@@ -124,7 +124,7 @@ export default function About() {
               <h3 className="text-xl font-semibold text-white mb-2">
                 {item.title}
               </h3>
-              <p className="text-[color:var(--foreground)] text-sm sm:text-base">
+              <p className="text-[var(--foreground)] text-sm sm:text-base">
                 {item.desc}
               </p>
             </motion.div>

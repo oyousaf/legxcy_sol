@@ -103,7 +103,7 @@ export default function Contact() {
       className="relative min-h-[60vh] px-6 sm:px-12 py-24 text-center overflow-hidden"
     >
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--mossy-bg)]/95 via-[color:var(--mossy-bg)]/85 to-[color:var(--dark-mint)]/95 -z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[var(--mossy-bg)]/95 via-[var(--mossy-bg)]/85 to-[var(--dark-mint)]/95 -z-10" />
 
       {/* Section heading */}
       <motion.h2
@@ -112,7 +112,7 @@ export default function Contact() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[color:var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
+        className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
       >
         Let’s Build Something Remarkable
       </motion.h2>
@@ -121,7 +121,7 @@ export default function Contact() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-lg max-w-2xl mx-auto mb-10 text-[color:var(--foreground)]"
+        className="text-lg max-w-2xl mx-auto mb-10 text-[var(--foreground)]"
       >
         Whether you’re ready to launch a project or simply exploring ideas, we’d
         love to hear from you.
@@ -156,7 +156,7 @@ export default function Contact() {
             {...register("name", { required: true })}
             autoComplete="name"
             placeholder="Your Name"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
           />
           {errors.name && (
             <span className="text-red-400 text-sm">Name is required</span>
@@ -174,7 +174,7 @@ export default function Contact() {
             {...register("email", { required: true })}
             autoComplete="email"
             placeholder="Your Email"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)]"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
           />
           {errors.email && (
             <span className="text-red-400 text-sm">
@@ -193,7 +193,7 @@ export default function Contact() {
             {...register("message", { required: true })}
             rows={5}
             placeholder="Your Message"
-            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] resize-none"
+            className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none"
           />
           {errors.message && (
             <span className="text-red-400 text-sm">Message is required</span>
@@ -208,7 +208,7 @@ export default function Contact() {
           type="submit"
           disabled={isSubmitting || sent}
           whileTap={{ scale: 0.97 }}
-          className="w-full mt-2 px-6 py-3 text-white bg-[color:var(--dark-mint)] cursor-pointer rounded-md font-semibold shadow-md transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] focus:ring-offset-2 disabled:opacity-50"
+          className="w-full mt-2 px-6 py-3 text-white bg-[var(--dark-mint)] cursor-pointer rounded-md font-semibold shadow-md transition focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] focus:ring-offset-2 disabled:opacity-50"
         >
           {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
         </motion.button>
@@ -219,7 +219,7 @@ export default function Contact() {
         <a
           href="mailto:info@legxcysol.dev"
           aria-label="Send us an email"
-          className="text-white hover:[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] rounded-full p-2"
+          className="text-white hover:[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
         >
           <FaEnvelope size={24} />
         </a>
@@ -228,7 +228,7 @@ export default function Contact() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat with us on Telegram"
-          className="text-white hover:text-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] rounded-full p-2"
+          className="text-white hover:text-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
         >
           <FaTelegramPlane size={24} />
         </a>
@@ -237,7 +237,7 @@ export default function Contact() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Message us on WhatsApp"
-          className="text-white hover:text-[color:var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] rounded-full p-2"
+          className="text-white hover:text-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
         >
           <FaWhatsapp size={24} />
         </a>
