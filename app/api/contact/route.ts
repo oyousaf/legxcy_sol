@@ -5,9 +5,21 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const limiter = new RateLimiterMemory({ points: 3, duration: 900 }); // 3 requests per 15 min
 
+// Simple sanitiser to prevent script injection
+const sanitize = (str: string) =>
+  String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for") || "unknown";
-  const { name, email, message, website, token } = await req.json();
+
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { name, email, message, website, token } = body;
 
   // 🐝 Honeypot check
   if (website) {
@@ -45,21 +57,47 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Send to your inbox
     const data = await resend.emails.send({
       from: `Legxcy Solutions <${process.env.RESEND_FROM_EMAIL!}>`,
       to: process.env.RESEND_TO_EMAIL!,
-      subject: `New Contact Form Submission from ${name}`,
+      subject: `New Contact Form Submission from ${sanitize(name)} (${sanitize(email)})`,
       replyTo: email,
+      text: `
+        New Message
+
+        Name: ${sanitize(name)}
+        Email: ${sanitize(email)}
+        Message:
+        ${sanitize(message)}
+      `,
       html: `
         <h2>New Message</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong><br/>${message}</p>
+        <p><strong>Name:</strong> ${sanitize(name)}</p>
+        <p><strong>Email:</strong> ${sanitize(email)}</p>
+        <p><strong>Message:</strong><br/>${sanitize(message)}</p>
       `,
     });
 
-    return NextResponse.json({ success: true, data });
-  } catch {
+    // Send an auto‑reply to the user
+    await resend.emails.send({
+      from: `Legxcy Solutions <${process.env.RESEND_FROM_EMAIL!}>`,
+      to: email,
+      subject: "Thanks for contacting Legxcy Solutions",
+      html: `
+        <p>Hi ${sanitize(name)},</p>
+        <p>Thanks for reaching out! We’ve received your message and will get back to you shortly.</p>
+        <p>Best regards,<br/>Legxcy Solutions Team</p>
+      `,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Thanks for reaching out! We’ll get back to you shortly.",
+      data,
+    });
+  } catch (err) {
+    console.error("Email send failed:", err);
     return NextResponse.json({ error: "Email failed" }, { status: 500 });
   }
 }
