@@ -97,7 +97,7 @@ export default function Navbar() {
             <li key={link.name}>
               <button
                 onClick={() => handleScroll(link.id)}
-                className="hover:text-[color:var(--accent-green)] transition-colors cursor-pointer"
+                className="hover:text-[var(--accent-green)] transition-colors cursor-pointer"
               >
                 {link.name}
               </button>
@@ -143,7 +143,7 @@ export default function Navbar() {
                 <motion.button
                   key={link.name}
                   onClick={() => handleScroll(link.id)}
-                  className="text-2xl font-medium hover:text-[color:var(--accent-green)] transition-colors"
+                  className="text-2xl font-medium hover:text-[var(--accent-green)] transition-colors"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}

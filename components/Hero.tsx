@@ -57,7 +57,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8 }}
-          className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[color:var(--accent-green)] to-teal-300 bg-clip-text text-transparent"
+          className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--accent-green)] to-teal-300 bg-clip-text text-transparent"
         >
           Where Vision Meets Innovation
         </motion.h1>
@@ -78,8 +78,8 @@ export default function Hero() {
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 260, damping: 18 }}
           className="inline-block mt-6 px-8 py-3 cursor-pointer text-white font-semibold rounded-lg shadow-md 
-                     bg-gradient-to-r from-[color:var(--accent-green)] to-teal-500 hover:from-teal-500 hover:to-[color:var(--accent-green)]
-                     focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-green)] focus:ring-offset-2"
+                     bg-gradient-to-r from-[var(--accent-green)] to-teal-500 hover:from-teal-500 hover:to-[var(--accent-green)]
+                     focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] focus:ring-offset-2"
         >
           Request a Free Audit
         </motion.button>
