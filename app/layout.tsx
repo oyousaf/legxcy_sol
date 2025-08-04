@@ -8,6 +8,7 @@ import { Inter, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GA_TRACKING_ID } from "@/lib/gtag";
+import WhatsAppBubble from "@/components/WhatsappBubble";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -146,6 +147,7 @@ export default function RootLayout({
         <LenisProvider>
           <Navbar />
           <ScrollToTop />
+          <WhatsAppBubble />
           <main className="pt-20">{children}</main>
           <Footer />
         </LenisProvider>
