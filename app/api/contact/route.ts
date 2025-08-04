@@ -46,9 +46,10 @@ export async function POST(req: Request) {
 
   try {
     const data = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+      from: `Legxcy Solutions <${process.env.RESEND_FROM_EMAIL!}>`,
       to: process.env.RESEND_TO_EMAIL!,
       subject: `New Contact Form Submission from ${name}`,
+      replyTo: email,
       html: `
         <h2>New Message</h2>
         <p><strong>Name:</strong> ${name}</p>
