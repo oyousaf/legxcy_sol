@@ -131,7 +131,7 @@ Sent via Legxcy Solutions Website
           Best regards,
           Legxcy Solutions
                 `,
-                html: `
+      html: `
                   <div style="background-color:#0f2f23;padding:15px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
                     <table width="100%" cellspacing="0" cellpadding="0" border="0"
                           style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
@@ -152,10 +152,10 @@ Sent via Legxcy Solutions Website
                             We have successfully received your message and will be in touch with you shortly.
                           </p>
                           <p style="font-size:16px;line-height:1.6;">
-                            In the meantime, we would be delighted if you could share a few details regarding your 
-                            <strong>project objectives</strong>, <strong>anticipated budget</strong>, and 
-                            <strong>preferred timeline</strong>. This will enable us to craft a tailored proposal 
-                            aligned with your vision and ensure we can initiate your project efficiently and effectively.
+                            In the meantime, we’d love to hear a little about your <strong>project goals</strong>, 
+                            the <strong>features you have in mind</strong>, and roughly <strong>how many pages or sections
+                            </strong> you’d like. This will enable us to craft a tailored proposal aligned with your vision 
+                            and ensure we can initiate your project efficiently and effectively.
                           </p>
                           <table width="100%" style="margin-top:30px;text-align:center;">
                             <tr>
@@ -172,7 +172,7 @@ Sent via Legxcy Solutions Website
                           </table>
                   </div>
                 `,
-              });
+    });
 
     return NextResponse.json({
       success: true,
