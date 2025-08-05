@@ -116,7 +116,7 @@ Legxcy Solutions
             <tr>
               <td style="text-align:center;padding:20px;">
                 <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                     style="max-width:150px;height:auto;margin-bottom:20px;" />
+                     style="max-width:100px;height:auto;margin-bottom:10px;" />
               </td>
             </tr>
             <tr>
