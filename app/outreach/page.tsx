@@ -29,6 +29,12 @@ export default function OutreachPage() {
         const res = await fetch("/api/outreach");
         const data = await res.json();
 
+        if (!Array.isArray(data)) {
+          console.warn("⚠️ Outreach API did not return an array:", data);
+          setSites([]);
+          return;
+        }
+
         // 🚫 Sort so businesses without a website come first
         const sorted = data.sort((a: SiteData, b: SiteData) => {
           if (a.hasWebsite === b.hasWebsite) return 0;
@@ -37,7 +43,8 @@ export default function OutreachPage() {
 
         setSites(sorted);
       } catch (err) {
-        console.error(err);
+        console.error("❌ Outreach fetch error:", err);
+        setSites([]);
       } finally {
         setLoading(false);
       }
@@ -56,6 +63,10 @@ export default function OutreachPage() {
 
         {loading ? (
           <p className="text-xl">Scanning websites…</p>
+        ) : sites.length === 0 ? (
+          <p className="text-xl text-gray-400 italic">
+            No businesses found for this search. Try again later!
+          </p>
         ) : (
           <ul className="space-y-6">
             {sites.map((site, i) => (
@@ -82,7 +93,7 @@ export default function OutreachPage() {
                   <p className="mt-2">
                     📧{" "}
                     <a
-                      href={`mailto:${site.email}?subject=Your Website Could Use a Refresh&body=Hi ${site.name},%0D%0A%0D%0AI noticed your business could benefit from a modern website. At Legxcy Solutions we build sleek, high-performing websites that boost visibility and conversions.%0D%0A%0D%0AWould you like me to share some ideas tailored to your business?%0D%0A%0D%0ABest regards,%0D%0A[Your Name]`}
+                      href={`mailto:${site.email}?subject=Your Website Could Use a Refresh&body=Hi ${site.name},%0D%0A%0D%0AI noticed your business could benefit from a modern website. At Legxcy Solutions we build sleek, high-performing websites that boost visibility and conversions.%0D%0A%0D%0AWould you like me to share some ideas tailored to your business?%0D%0A%0D%0ABest regards,%0D%0ALegxcy Solutions`}
                       className="underline text-[--accent-green]"
                     >
                       {site.email}
