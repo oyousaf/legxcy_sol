@@ -64,28 +64,50 @@ export async function POST(req: Request) {
       to: process.env.RESEND_TO_EMAIL!,
       subject: `New Contact Form Submission from ${sanitize(name)} (${sanitize(email)})`,
       replyTo: email,
+      text: `
+New contact form submission
+
+Name: ${sanitize(name)}
+Email: ${sanitize(email)}
+
+Message:
+${sanitize(message)}
+
+Sent via Legxcy Solutions Website
+      `,
       html: `
-        <div style="background-color:#0f2f23;padding:20px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
+        <div style="background-color:#0f2f23;padding:15px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
           <table width="100%" cellspacing="0" cellpadding="0" border="0" 
                  style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
             <tr>
-              <td style="text-align:center;padding:20px;">
+              <td style="text-align:center;padding:15px 20px 10px 20px;">
                 <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                     style="max-width:150px;height:auto;margin-bottom:20px;" />
+                     style="max-width:120px;height:auto;margin-bottom:10px;" />
+                <h2 style="color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;">
+                  New Contact Form Submission
+                </h2>
               </td>
             </tr>
             <tr>
-              <td style="padding:30px;">
-                <h2 style="color:#59ae6a;margin-bottom:20px;font-weight:600;">New Contact Form Submission</h2>
-                <p><strong>Name:</strong> ${sanitize(name)}</p>
-                <p><strong>Email:</strong> ${sanitize(email)}</p>
-                <p style="margin-top:20px;line-height:1.6;">
-                  <strong>Message:</strong><br/>
-                  <span style="background:#0f2f23;display:inline-block;padding:15px;border-radius:8px;color:#e6e6e6;">
+              <td style="padding:20px;">
+                <p style="margin:10px 0;font-size:16px;line-height:1.5;">
+                  <strong style="color:#59ae6a;">Name:</strong><br/>
+                  ${sanitize(name)}
+                </p>
+                <p style="margin:10px 0;font-size:16px;line-height:1.5;">
+                  <strong style="color:#59ae6a;">Email:</strong><br/>
+                  ${sanitize(email)}
+                </p>
+                <p style="margin:10px 0;font-size:16px;line-height:1.6;">
+                  <strong style="color:#59ae6a;">Message:</strong><br/>
+                  <span style="background:#0f2f23;display:block;padding:15px;border-radius:8px;color:#e6e6e6;">
                     ${sanitize(message)}
                   </span>
                 </p>
-                <p style="font-size:14px;color:#a3a3a3;margin-top:30px;">Sent via Legxcy Solutions Website</p>
+                <hr style="border:none;border-top:1px solid #2d5440;margin:20px 0;" />
+                <p style="font-size:14px;color:#a3a3a3;text-align:center;">
+                  Sent via Legxcy Solutions Website
+                </p>
               </td>
             </tr>
           </table>
@@ -110,18 +132,20 @@ Best regards,
 Legxcy Solutions
       `,
       html: `
-        <div style="background-color:#0f2f23;padding:20px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
+        <div style="background-color:#0f2f23;padding:15px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
           <table width="100%" cellspacing="0" cellpadding="0" border="0"
                  style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
             <tr>
-              <td style="text-align:center;padding:20px;">
+              <td style="text-align:center;padding:15px 20px 10px 20px;">
                 <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                     style="max-width:100px;height:auto;margin-bottom:10px;" />
+                     style="max-width:120px;height:auto;margin-bottom:10px;" />
+                <h2 style="text-align:center;color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;">
+                  Thank You for Getting in Touch
+                </h2>
               </td>
             </tr>
             <tr>
-              <td style="padding:30px;">
-                <h2 style="color:#59ae6a;margin-bottom:20px;font-weight:600;">Thank You for Contacting Us</h2>
+              <td style="padding:20px;">
                 <p style="font-size:16px;line-height:1.6;">Hi ${firstName},</p>
                 <p style="font-size:16px;line-height:1.6;">
                   Thank you for reaching out to <strong>Legxcy Solutions</strong>. 
