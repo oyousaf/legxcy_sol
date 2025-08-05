@@ -99,6 +99,16 @@ export async function POST(req: Request) {
       to: email,
       subject: "Thanks for contacting Legxcy Solutions",
       replyTo: process.env.RESEND_TO_EMAIL!,
+      text: `
+Hi ${firstName},
+
+Thank you for contacting Legxcy Solutions. We’ve successfully received your message and will be in touch with you shortly.
+
+In the meantime, we’d be delighted if you could share a few details regarding your project objectives, anticipated budget, and preferred timeline. This will allow us to craft a tailored proposal aligned with your vision and ensure we can initiate your project efficiently and effectively.
+
+Best regards,
+Legxcy Solutions
+      `,
       html: `
         <div style="background-color:#0f2f23;padding:20px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
           <table width="100%" cellspacing="0" cellpadding="0" border="0"
@@ -127,7 +137,7 @@ export async function POST(req: Request) {
                   <tr>
                     <td>
                       <p style="font-size:14px;color:#a3a3a3;margin-bottom:10px;">
-                        Best regards,
+                        Best regards,<br/>The Legxcy Solutions Team
                       </p>
                       <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner"
                            style="max-width:150px;height:auto;border-radius:6px;" />
