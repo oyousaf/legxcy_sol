@@ -49,7 +49,15 @@ body::-webkit-scrollbar {
     color 0.3s ease;
 }
 
-/* ─── Gradient shift ─────────────────────────────────────────────── */
+/* ─── Securing assets ─────────────────────────────────────────── */
+img,
+video {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ─── Gradient shift ──────────────────────────────────────────── */
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
