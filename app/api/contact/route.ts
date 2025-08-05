@@ -137,7 +137,7 @@ Legxcy Solutions
                   <tr>
                     <td>
                       <p style="font-size:14px;color:#a3a3a3;margin-bottom:10px;">
-                        Best regards,<br/>The Legxcy Solutions Team
+                        Best regards,
                       </p>
                       <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner"
                            style="max-width:150px;height:auto;border-radius:6px;" />
