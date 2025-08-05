@@ -6,6 +6,7 @@ type SiteData = {
   name: string;
   url: string;
   phone?: string;
+  email?: string;
   performanceScore: number | "N/A";
 };
 
@@ -62,7 +63,21 @@ export default function OutreachPage() {
                 >
                   {site.url}
                 </a>
+
+                {site.email && (
+                  <p className="mt-2">
+                    📧{" "}
+                    <a
+                      href={`mailto:${site.email}`}
+                      className="underline text-[--accent-green]"
+                    >
+                      {site.email}
+                    </a>
+                  </p>
+                )}
+
                 {site.phone && <p className="mt-2">📞 {site.phone}</p>}
+
                 <p className="mt-4">
                   Performance Score:{" "}
                   <span

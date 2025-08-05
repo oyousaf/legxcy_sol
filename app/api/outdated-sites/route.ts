@@ -11,7 +11,6 @@ async function getPageSpeedScore(url: string) {
       `${PAGESPEED_API}?url=${encodeURIComponent(url)}&strategy=mobile&key=${API_KEY}`
     );
     const data = await res.json();
-
     const score = data.lighthouseResult?.categories?.performance?.score;
     return score !== undefined ? Math.round(score * 100) : null;
   } catch (err) {
@@ -28,14 +27,17 @@ export async function GET() {
 
   const page = await browser.newPage();
   await page.goto(
-    "https://www.yell.com/ucs/UcsSearchAction.do?keywords=website&location=United+Kingdom"
+    "https://www.yell.com/ucs/UcsSearchAction.do?keywords=website&location=United+Kingdom",
+    { waitUntil: "domcontentloaded" }
   );
 
-  const results = await page.evaluate(() => {
-    const businesses: {
+  // Grab initial business data
+  const businesses = await page.evaluate(() => {
+    const data: {
       name: string;
       url: string;
       phone: string | null;
+      profileLink: string | null;
     }[] = [];
 
     document.querySelectorAll(".businessCapsule--mainContent").forEach((el) => {
@@ -45,16 +47,48 @@ export async function GET() {
         "";
       const phone =
         el.querySelector(".business--telephone")?.textContent?.trim() || null;
-      businesses.push({ name, url, phone });
+      const profileLink =
+        (el.querySelector("h2 a") as HTMLAnchorElement)?.href || null;
+      data.push({ name, url, phone, profileLink });
     });
-    return businesses.slice(0, 5); // Limit for speed
+
+    return data.slice(0, 5); // limit to 5 for speed
   });
 
-  // Fetch PageSpeed scores in parallel
+  // Visit each profile to extract email + performance score
   const enrichedResults = await Promise.all(
-    results.map(async (biz) => {
-      const score = biz.url ? await getPageSpeedScore(biz.url) : null;
-      return { ...biz, performanceScore: score ?? "N/A" };
+    businesses.map(async (biz) => {
+      let email: string | null = null;
+
+      if (biz.profileLink) {
+        try {
+          const profilePage = await browser.newPage();
+          await profilePage.goto(biz.profileLink, {
+            waitUntil: "domcontentloaded",
+          });
+
+          email = await profilePage.evaluate(() => {
+            const emailNode = document.querySelector("a[href^='mailto:']");
+            return emailNode ? emailNode.textContent?.trim() || null : null;
+          });
+
+          await profilePage.close();
+        } catch (err) {
+          console.warn(`Could not fetch email for ${biz.name}`, err);
+        }
+      }
+
+      const performanceScore = biz.url
+        ? await getPageSpeedScore(biz.url)
+        : null;
+
+      return {
+        name: biz.name,
+        url: biz.url,
+        phone: biz.phone,
+        email,
+        performanceScore: performanceScore ?? "N/A",
+      };
     })
   );
 
