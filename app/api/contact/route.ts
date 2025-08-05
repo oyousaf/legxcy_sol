@@ -163,14 +163,13 @@ Legxcy Solutions
                       <p style="font-size:14px;color:#a3a3a3;margin-bottom:10px;">
                         Best regards,
                       </p>
-                      <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner"
-                           style="max-width:150px;height:auto;border-radius:6px;" />
+                      <a href="https://legxcysol.dev" target="_blank" style="text-decoration:none;">
+                        <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner"
+                            style="max-width:150px;height:auto;border-radius:6px;" />
+                      </a>
                     </td>
                   </tr>
                 </table>
-              </td>
-            </tr>
-          </table>
         </div>
       `,
     });
