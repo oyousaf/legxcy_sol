@@ -32,7 +32,12 @@ export async function GET() {
   );
 
   const results = await page.evaluate(() => {
-    const businesses: any[] = [];
+    const businesses: {
+      name: string;
+      url: string;
+      phone: string | null;
+    }[] = [];
+
     document.querySelectorAll(".businessCapsule--mainContent").forEach((el) => {
       const name = el.querySelector("h2 a")?.textContent?.trim() || "Unknown";
       const url =
