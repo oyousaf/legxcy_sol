@@ -219,7 +219,7 @@ export default function Contact() {
         <a
           href="mailto:info@legxcysol.dev"
           aria-label="Send us an email"
-          className="text-white hover:[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
+          className="text-white hover:text-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
         >
           <FaEnvelope size={24} />
         </a>
