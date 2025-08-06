@@ -77,7 +77,15 @@ export default function OutreachPage() {
   return (
     <main className="flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-5xl text-center">
-        <h1 className="text-4xl font-bold mb-6">🍉 Outreach Dashboard</h1>
+        <motion.h1
+          className="text-4xl font-bold mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          🍉 Outreach Dashboard
+        </motion.h1>
+
         <div className="mb-8 text-md text-white/90">
           🚫 <strong>{noWebsiteCount}</strong> with no website | ✅{" "}
           <strong>{contactedCount}</strong> contacted
@@ -102,26 +110,26 @@ export default function OutreachPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h2 className="text-2xl font-semibold">{site.name}</h2>
-                      <div className="text-gray-300 mt-2">
+                      <div className="text-gray-300 mt-2 space-y-1">
                         {site.phone && <p>📞 {site.phone}</p>}
                         {site.rating !== "N/A" && <p>⭐ {site.rating} / 5</p>}
+                        {site.url && (
+                          <p>
+                            🌐{" "}
+                            <a
+                              href={site.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline text-[--accent-green]"
+                            >
+                              Visit Website
+                            </a>
+                          </p>
+                        )}
                         {!site.phone && site.rating === "N/A" && (
                           <p className="italic">No contact details available</p>
                         )}
                       </div>
-                      {site.url && (
-                        <p className="mt-2">
-                          🌐{" "}
-                          <a
-                            href={site.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline text-[--accent-green]"
-                          >
-                            Visit Website
-                          </a>
-                        </p>
-                      )}
                     </div>
 
                     <div>

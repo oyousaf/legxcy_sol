@@ -27,14 +27,12 @@ export async function GET(req: Request) {
     const queryParam = searchParams.get("query") || "electricians in Ossett";
     const cacheKey = `outreach:${queryParam}`;
 
-    // ⚡ Try KV cache
     const cached = await kv.get<BusinessEntry[]>(cacheKey);
     if (cached) {
       console.log("⚡ HIT from KV cache:", cached.length);
       return NextResponse.json(cached);
     }
 
-    console.log("❌ MISS — fetching fresh results");
     const mapsRes = await fetch(
       `${GOOGLE_TEXT_SEARCH}?query=${encodeURIComponent(queryParam)}&key=${API_KEY}`
     );
@@ -70,22 +68,16 @@ export async function GET(req: Request) {
             phone,
             rating,
             hasWebsite: !!website,
-            profileLink: `https://search.google.com/local/place?id=${place.place_id}`,
+            profileLink: `https://www.google.com/maps/place/?q=place_id:${place.place_id}`,
           };
         })
     );
 
-    // 🚫 Sort: No-website businesses first
     const sorted = results.sort((a, b) =>
       a.hasWebsite === b.hasWebsite ? 0 : a.hasWebsite ? 1 : -1
     );
 
-    try {
-      await kv.set(cacheKey, sorted, { ex: 86400 });
-      console.log("✅ Cached results for:", cacheKey);
-    } catch (e) {
-      console.error("KV set failed:", e);
-    }
+    await kv.set(cacheKey, sorted, { ex: 86400 });
 
     return NextResponse.json(sorted);
   } catch (err: unknown) {
