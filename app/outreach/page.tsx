@@ -17,6 +17,7 @@ export default function OutreachPage() {
   const [loading, setLoading] = useState(true);
   const [contacted, setContacted] = useState<Record<string, boolean>>({});
 
+  // Fetch outreach data
   useEffect(() => {
     async function fetchData() {
       try {
@@ -33,34 +34,35 @@ export default function OutreachPage() {
     fetchData();
   }, []);
 
+  // Batch fetch contacted status
   useEffect(() => {
     async function loadContacted() {
-      const statusMap: Record<string, boolean> = {};
-      await Promise.all(
-        sites.map(async (site) => {
-          try {
-            const res = await fetch(
-              `/api/contacted?name=${encodeURIComponent(site.name)}`
-            );
-            const json = await res.json();
-            statusMap[site.name] = json.contacted ?? false;
-          } catch {
-            statusMap[site.name] = false;
-          }
-        })
-      );
-      setContacted(statusMap);
+      if (sites.length === 0) return;
+      try {
+        const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
+        const res = await fetch(`/api/contacted?names=${names}`);
+        const json = await res.json();
+        setContacted(json);
+      } catch {
+        setContacted({});
+      }
     }
-    if (sites.length > 0) loadContacted();
+    loadContacted();
   }, [sites]);
 
+  // Mark as contacted/uncontacted
   const markAsContacted = async (name: string, value: boolean) => {
-    await fetch("/api/contacted", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contacted: value }),
-    });
-    setContacted((prev) => ({ ...prev, [name]: value }));
+    setContacted((prev) => ({ ...prev, [name]: value })); // optimistic update
+    try {
+      await fetch("/api/contacted", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, contacted: value }),
+      });
+    } catch {
+      // rollback if failed
+      setContacted((prev) => ({ ...prev, [name]: !value }));
+    }
   };
 
   if (loading) {
