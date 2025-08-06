@@ -182,7 +182,7 @@ export default function OutreachPage() {
                       rel="noopener noreferrer"
                       className="inline-block px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
-                      🚫 View Business Profile
+                      🚫 View Profile
                     </a>
                   </motion.p>
                 </motion.li>
