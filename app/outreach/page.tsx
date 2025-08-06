@@ -15,13 +15,12 @@ type SiteData = {
 export default function OutreachPage() {
   const [sites, setSites] = useState<SiteData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contacted, setContacted] = useState<Record<string, boolean>>({});
+  const [hydrated, setHydrated] = useState(false);
 
-  const getBadgeColor = (score: number | "N/A") => {
-    if (score === "N/A") return "bg-gray-600";
-    if (score >= 90) return "bg-green-600";
-    if (score >= 50) return "bg-yellow-600 text-black";
-    return "bg-red-600";
-  };
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -35,12 +34,7 @@ export default function OutreachPage() {
           return;
         }
 
-        // 🚫 Sort so businesses without a website come first
-        const sorted = data.sort((a: SiteData, b: SiteData) => {
-          if (a.hasWebsite === b.hasWebsite) return 0;
-          return a.hasWebsite ? 1 : -1;
-        });
-
+        const sorted = data.sort((a, b) => (a.hasWebsite ? 1 : -1));
         setSites(sorted);
       } catch (err) {
         console.error("❌ Outreach fetch error:", err);
@@ -52,20 +46,58 @@ export default function OutreachPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    async function loadContacted() {
+      const statusMap: Record<string, boolean> = {};
+      await Promise.all(
+        sites.map(async (site) => {
+          const res = await fetch(
+            `/api/contacted?name=${encodeURIComponent(site.name)}`
+          );
+          const json = await res.json();
+          statusMap[site.name] = json.contacted ?? false;
+        })
+      );
+      setContacted(statusMap);
+    }
+
+    if (sites.length > 0) loadContacted();
+  }, [sites]);
+
+  const markAsContacted = async (name: string) => {
+    await fetch("/api/contacted", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    setContacted((prev) => ({ ...prev, [name]: true }));
+  };
+
+  const getBadgeColor = (score: number | "N/A") => {
+    if (score === "N/A") return "bg-gray-600";
+    if (score >= 90) return "bg-green-600";
+    if (score >= 50) return "bg-yellow-600 text-black";
+    return "bg-red-600";
+  };
+
+  const contactedCount = Object.values(contacted).filter(Boolean).length;
+  const noWebsiteCount = sites.filter((s) => !s.hasWebsite).length;
+
   return (
-    <main className="min-h-screen bg-[--mossy-bg] text-white flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-4xl text-center">
-        <h1 className="text-4xl font-bold mb-6">🍉 Outdated Sites</h1>
-        <p className="mb-8 text-lg">
-          Here’s a live feed of UK businesses we’ve flagged for potential
-          upgrades.
-        </p>
+    <main className="flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-5xl text-center">
+        <h1 className="text-4xl font-bold mb-6">🍉 Outreach Dashboard</h1>
+
+        <div className="mb-8 text-md text-white/90">
+          🚫 <strong>{noWebsiteCount}</strong> with no website | ✅{" "}
+          <strong>{contactedCount}</strong> contacted
+        </div>
 
         {loading ? (
           <p className="text-xl">Scanning websites…</p>
         ) : sites.length === 0 ? (
           <p className="text-xl text-gray-400 italic">
-            No businesses found for this search. Try again later!
+            No businesses found for this search.
           </p>
         ) : (
           <ul className="space-y-6">
@@ -74,34 +106,66 @@ export default function OutreachPage() {
                 key={i}
                 className="p-6 rounded-xl bg-[--dark-mint] shadow-lg text-left"
               >
-                <h2 className="text-2xl font-semibold">{site.name}</h2>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-semibold flex items-center gap-2">
+                      {site.name}
+                      {site.profileLink && (
+                        <a
+                          href={site.profileLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-300 underline"
+                        >
+                          View on Maps
+                        </a>
+                      )}
+                    </h2>
 
-                {site.hasWebsite && site.url ? (
-                  <a
-                    href={site.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-[--accent-green] break-all"
-                  >
-                    {site.url}
-                  </a>
-                ) : (
-                  <p className="text-gray-400 italic">No website listed</p>
-                )}
+                    {site.hasWebsite && site.url ? (
+                      <a
+                        href={site.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-[--accent-green] break-all"
+                      >
+                        {site.url}
+                      </a>
+                    ) : (
+                      <div className="text-gray-300 mt-2">
+                        <p className="italic">No website listed</p>
+                        {site.phone && <p>📞 {site.phone}</p>}
+                        {site.email && (
+                          <p>
+                            📧{" "}
+                            <a
+                              href={`mailto:${site.email}`}
+                              className="underline text-[--accent-green]"
+                            >
+                              {site.email}
+                            </a>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                {site.email && (
-                  <p className="mt-2">
-                    📧{" "}
-                    <a
-                      href={`mailto:${site.email}?subject=Your Website Could Use a Refresh&body=Hi ${site.name},%0D%0A%0D%0AI noticed your business could benefit from a modern website. At Legxcy Solutions we build sleek, high-performing websites that boost visibility and conversions.%0D%0A%0D%0AWould you like me to share some ideas tailored to your business?%0D%0A%0D%0ABest regards,%0D%0ALegxcy Solutions`}
-                      className="underline text-[--accent-green]"
-                    >
-                      {site.email}
-                    </a>
-                  </p>
-                )}
-
-                {site.phone && <p className="mt-2">📞 {site.phone}</p>}
+                  <div>
+                    {hydrated &&
+                      (!contacted[site.name] ? (
+                        <button
+                          onClick={() => markAsContacted(site.name)}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                        >
+                          📬 Mark Contacted
+                        </button>
+                      ) : (
+                        <span className="px-3 py-1 bg-green-600 rounded text-sm">
+                          ✅ Contacted
+                        </span>
+                      ))}
+                  </div>
+                </div>
 
                 <p className="mt-4">
                   {site.hasWebsite ? (
@@ -120,11 +184,10 @@ export default function OutreachPage() {
                   ) : (
                     <a
                       href={
-                        site.email
-                          ? `mailto:${site.email}?subject=Let's Build You a Website&body=Hi ${site.name},%0D%0A%0D%0AI noticed your business doesn’t have a website yet. At Legxcy Solutions, we create sleek, professional sites to help businesses thrive online.%0D%0A%0D%0AInterested in a free consultation?%0D%0A%0D%0ABest regards,%0D%0A[Your Name]`
-                          : site.profileLink || "#"
+                        site.profileLink ||
+                        (site.email ? `mailto:${site.email}` : "#")
                       }
-                      target={site.email ? "_self" : "_blank"}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
