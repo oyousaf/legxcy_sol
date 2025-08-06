@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+function useHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  return hydrated;
+}
 
 type SiteData = {
   name: string;
@@ -16,28 +23,16 @@ export default function OutreachPage() {
   const [sites, setSites] = useState<SiteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacted, setContacted] = useState<Record<string, boolean>>({});
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  const hydrated = useHydrated();
 
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch("/api/outreach");
         const data = await res.json();
-
-        if (!Array.isArray(data)) {
-          console.warn("⚠️ Outreach API did not return an array:", data);
-          setSites([]);
-          return;
-        }
-
-        const sorted = data.sort((a, b) => (a.hasWebsite ? 1 : -1));
-        setSites(sorted);
-      } catch (err) {
-        console.error("❌ Outreach fetch error:", err);
+        if (!Array.isArray(data)) return setSites([]);
+        setSites(data);
+      } catch {
         setSites([]);
       } finally {
         setLoading(false);
@@ -51,26 +46,29 @@ export default function OutreachPage() {
       const statusMap: Record<string, boolean> = {};
       await Promise.all(
         sites.map(async (site) => {
-          const res = await fetch(
-            `/api/contacted?name=${encodeURIComponent(site.name)}`
-          );
-          const json = await res.json();
-          statusMap[site.name] = json.contacted ?? false;
+          try {
+            const res = await fetch(
+              `/api/contacted?name=${encodeURIComponent(site.name)}`
+            );
+            const json = await res.json();
+            statusMap[site.name] = json.contacted ?? false;
+          } catch {
+            statusMap[site.name] = false;
+          }
         })
       );
       setContacted(statusMap);
     }
-
     if (sites.length > 0) loadContacted();
   }, [sites]);
 
-  const markAsContacted = async (name: string) => {
+  const markAsContacted = async (name: string, value: boolean) => {
     await fetch("/api/contacted", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, contacted: value }),
     });
-    setContacted((prev) => ({ ...prev, [name]: true }));
+    setContacted((prev) => ({ ...prev, [name]: value }));
   };
 
   const getBadgeColor = (score: number | "N/A") => {
@@ -80,6 +78,14 @@ export default function OutreachPage() {
     return "bg-red-600";
   };
 
+  if (!hydrated) {
+    return (
+      <main className="flex items-center justify-center min-h-screen">
+        <p className="text-lg text-gray-400">Loading dashboard...</p>
+      </main>
+    );
+  }
+
   const contactedCount = Object.values(contacted).filter(Boolean).length;
   const noWebsiteCount = sites.filter((s) => !s.hasWebsite).length;
 
@@ -87,53 +93,33 @@ export default function OutreachPage() {
     <main className="flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-5xl text-center">
         <h1 className="text-4xl font-bold mb-6">🍉 Outreach Dashboard</h1>
-
         <div className="mb-8 text-md text-white/90">
           🚫 <strong>{noWebsiteCount}</strong> with no website | ✅{" "}
           <strong>{contactedCount}</strong> contacted
         </div>
 
         {loading ? (
-          <p className="text-xl">Scanning websites…</p>
+          <p className="text-xl">Scanning businesses…</p>
         ) : sites.length === 0 ? (
           <p className="text-xl text-gray-400 italic">
             No businesses found for this search.
           </p>
         ) : (
           <ul className="space-y-6">
-            {sites.map((site, i) => (
-              <li
-                key={i}
-                className="p-6 rounded-xl bg-[--dark-mint] shadow-lg text-left"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-semibold flex items-center gap-2">
-                      {site.name}
-                      {site.profileLink && (
-                        <a
-                          href={site.profileLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-300 underline"
-                        >
-                          View on Maps
-                        </a>
-                      )}
-                    </h2>
-
-                    {site.hasWebsite && site.url ? (
-                      <a
-                        href={site.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline text-[--accent-green] break-all"
-                      >
-                        {site.url}
-                      </a>
-                    ) : (
+            <AnimatePresence>
+              {sites.map((site, i) => (
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.35, delay: i * 0.05 }}
+                  className="p-6 rounded-xl bg-[--dark-mint] shadow-lg text-left"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-2xl font-semibold">{site.name}</h2>
                       <div className="text-gray-300 mt-2">
-                        <p className="italic">No website listed</p>
                         {site.phone && <p>📞 {site.phone}</p>}
                         {site.email && (
                           <p>
@@ -146,57 +132,87 @@ export default function OutreachPage() {
                             </a>
                           </p>
                         )}
+                        {!site.phone && !site.email && (
+                          <p className="italic">No contact details available</p>
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    <div>
+                      <AnimatePresence mode="wait" initial={false}>
+                        {!contacted[site.name] ? (
+                          <motion.button
+                            key="mark"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.25 }}
+                            onClick={() => markAsContacted(site.name, true)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                          >
+                            📬 Mark Contacted
+                          </motion.button>
+                        ) : (
+                          <motion.div
+                            key="contacted"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.25 }}
+                            className="flex gap-2"
+                          >
+                            <span className="px-3 py-1 bg-green-600 rounded text-sm">
+                              ✅ Contacted
+                            </span>
+                            <button
+                              onClick={() => markAsContacted(site.name, false)}
+                              className="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-xs"
+                            >
+                              Undo
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
-                  <div>
-                    {hydrated &&
-                      (!contacted[site.name] ? (
-                        <button
-                          onClick={() => markAsContacted(site.name)}
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                        >
-                          📬 Mark Contacted
-                        </button>
-                      ) : (
-                        <span className="px-3 py-1 bg-green-600 rounded text-sm">
-                          ✅ Contacted
-                        </span>
-                      ))}
-                  </div>
-                </div>
-
-                <p className="mt-4">
-                  {site.hasWebsite ? (
-                    <>
-                      Performance Score:{" "}
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full font-bold ${getBadgeColor(
-                          site.performanceScore
-                        )}`}
-                      >
-                        {site.performanceScore !== "N/A"
-                          ? `${site.performanceScore}%`
-                          : "Not available"}
-                      </span>
-                    </>
-                  ) : (
-                    <a
-                      href={
-                        site.profileLink ||
-                        (site.email ? `mailto:${site.email}` : "#")
+                  <motion.p
+                    className="mt-4 flex flex-wrap gap-3 items-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <motion.span
+                      className={`inline-block px-3 py-1 rounded-full font-bold ${getBadgeColor(
+                        site.performanceScore
+                      )}`}
+                      animate={
+                        site.performanceScore === "N/A"
+                          ? {}
+                          : site.performanceScore >= 90
+                            ? { scale: [1, 1.1, 1] }
+                            : site.performanceScore < 50
+                              ? { x: [0, -4, 4, -4, 4, 0] }
+                              : {}
                       }
+                      transition={{ duration: 0.8 }}
+                    >
+                      {site.performanceScore !== "N/A"
+                        ? `${site.performanceScore}%`
+                        : "Performance not available"}
+                    </motion.span>
+                    <a
+                      href={site.profileLink || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
-                      🚫 No Website
+                      🚫 View Business Profile
                     </a>
-                  )}
-                </p>
-              </li>
-            ))}
+                  </motion.p>
+                </motion.li>
+              ))}
+            </AnimatePresence>
           </ul>
         )}
       </div>
