@@ -5,32 +5,21 @@ const GOOGLE_TEXT_SEARCH =
   "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const GOOGLE_PLACE_DETAILS =
   "https://maps.googleapis.com/maps/api/place/details/json";
-const PAGESPEED_API =
-  "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const API_KEY = process.env.GOOGLE_SERVER_API_KEY!;
 
 type BusinessEntry = {
   name: string;
   url: string | null;
   phone: string | null;
-  email: string | null;
+  rating: number | "N/A";
   hasWebsite: boolean;
   profileLink: string | null;
-  performanceScore: number | "N/A";
 };
 
-async function getPageSpeedScore(url: string): Promise<number | "N/A"> {
-  try {
-    const res = await fetch(
-      `${PAGESPEED_API}?url=${encodeURIComponent(url)}&strategy=mobile&key=${API_KEY}`
-    );
-    const data = await res.json();
-    const score = data.lighthouseResult?.categories?.performance?.score;
-    return score !== undefined ? Math.round(score * 100) : "N/A";
-  } catch {
-    return "N/A";
-  }
-}
+type GooglePlace = {
+  place_id: string;
+  name: string;
+};
 
 export async function GET(req: Request) {
   try {
@@ -38,14 +27,14 @@ export async function GET(req: Request) {
     const queryParam = searchParams.get("query") || "electricians in Ossett";
     const cacheKey = `outreach:${queryParam}`;
 
-    // ⚡ Check KV cache
+    // ⚡ Try KV cache
     const cached = await kv.get<BusinessEntry[]>(cacheKey);
     if (cached) {
-      console.log("⚡ Served from KV cache:", cached.length);
+      console.log("⚡ HIT from KV cache:", cached.length);
       return NextResponse.json(cached);
     }
 
-    console.log("🔍 Fetching Google Maps results for:", queryParam);
+    console.log("❌ MISS — fetching fresh results");
     const mapsRes = await fetch(
       `${GOOGLE_TEXT_SEARCH}?query=${encodeURIComponent(queryParam)}&key=${API_KEY}`
     );
@@ -56,43 +45,47 @@ export async function GET(req: Request) {
     if (mapsData.error_message) throw new Error(mapsData.error_message);
 
     const results: BusinessEntry[] = await Promise.all(
-      (mapsData.results || []).slice(0, 12).map(async (place: any) => {
-        let phone: string | null = null;
-        let website: string | null = null;
+      ((mapsData.results as GooglePlace[]) || [])
+        .slice(0, 12)
+        .map(async (place) => {
+          let phone: string | null = null;
+          let website: string | null = null;
+          let rating: number | "N/A" = "N/A";
 
-        try {
-          const detailsRes = await fetch(
-            `${GOOGLE_PLACE_DETAILS}?place_id=${place.place_id}&fields=formatted_phone_number,website&key=${API_KEY}`
-          );
-          const details = await detailsRes.json();
-          phone = details.result?.formatted_phone_number || null;
-          website = details.result?.website || null;
-        } catch (err) {
-          console.warn(`⚠️ Failed details for ${place.name}`, err);
-        }
+          try {
+            const detailsRes = await fetch(
+              `${GOOGLE_PLACE_DETAILS}?place_id=${place.place_id}&fields=formatted_phone_number,website,rating&key=${API_KEY}`
+            );
+            const details = await detailsRes.json();
+            phone = details.result?.formatted_phone_number || null;
+            website = details.result?.website || null;
+            rating = details.result?.rating ?? "N/A";
+          } catch (err) {
+            console.warn(`⚠️ Failed details for ${place.name}`, err);
+          }
 
-        const performanceScore =
-          website && website.startsWith("http")
-            ? await getPageSpeedScore(website)
-            : "N/A";
-
-        return {
-          name: place.name,
-          url: website,
-          phone,
-          email: null, // Google rarely provides emails
-          hasWebsite: !!website,
-          profileLink: `https://search.google.com/local/place?id=${place.place_id}`,
-          performanceScore,
-        };
-      })
+          return {
+            name: place.name,
+            url: website,
+            phone,
+            rating,
+            hasWebsite: !!website,
+            profileLink: `https://search.google.com/local/place?id=${place.place_id}`,
+          };
+        })
     );
 
     // 🚫 Sort: No-website businesses first
-    const sorted = results.sort((a, b) => (a.hasWebsite ? 1 : -1));
+    const sorted = results.sort((a, b) =>
+      a.hasWebsite === b.hasWebsite ? 0 : a.hasWebsite ? 1 : -1
+    );
 
-    console.log("✅ Fresh results:", sorted.length);
-    await kv.set(cacheKey, sorted, { ex: 86400 });
+    try {
+      await kv.set(cacheKey, sorted, { ex: 86400 });
+      console.log("✅ Cached results for:", cacheKey);
+    } catch (e) {
+      console.error("KV set failed:", e);
+    }
 
     return NextResponse.json(sorted);
   } catch (err: unknown) {

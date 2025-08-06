@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-function useHydrated() {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  return hydrated;
-}
-
 type SiteData = {
   name: string;
   url: string | null;
   phone?: string | null;
-  email?: string | null;
-  performanceScore: number | "N/A";
+  rating?: number | "N/A";
   hasWebsite: boolean;
   profileLink?: string | null;
 };
@@ -23,7 +16,6 @@ export default function OutreachPage() {
   const [sites, setSites] = useState<SiteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacted, setContacted] = useState<Record<string, boolean>>({});
-  const hydrated = useHydrated();
 
   useEffect(() => {
     async function fetchData() {
@@ -71,17 +63,10 @@ export default function OutreachPage() {
     setContacted((prev) => ({ ...prev, [name]: value }));
   };
 
-  const getBadgeColor = (score: number | "N/A") => {
-    if (score === "N/A") return "bg-gray-600";
-    if (score >= 90) return "bg-green-600";
-    if (score >= 50) return "bg-yellow-600 text-black";
-    return "bg-red-600";
-  };
-
-  if (!hydrated) {
+  if (loading) {
     return (
       <main className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-gray-400">Loading dashboard...</p>
+        <p className="text-lg text-gray-400">Scanning businesses…</p>
       </main>
     );
   }
@@ -98,9 +83,7 @@ export default function OutreachPage() {
           <strong>{contactedCount}</strong> contacted
         </div>
 
-        {loading ? (
-          <p className="text-xl">Scanning businesses…</p>
-        ) : sites.length === 0 ? (
+        {sites.length === 0 ? (
           <p className="text-xl text-gray-400 italic">
             No businesses found for this search.
           </p>
@@ -121,21 +104,24 @@ export default function OutreachPage() {
                       <h2 className="text-2xl font-semibold">{site.name}</h2>
                       <div className="text-gray-300 mt-2">
                         {site.phone && <p>📞 {site.phone}</p>}
-                        {site.email && (
-                          <p>
-                            📧{" "}
-                            <a
-                              href={`mailto:${site.email}`}
-                              className="underline text-[--accent-green]"
-                            >
-                              {site.email}
-                            </a>
-                          </p>
-                        )}
-                        {!site.phone && !site.email && (
+                        {site.rating !== "N/A" && <p>⭐ {site.rating} / 5</p>}
+                        {!site.phone && site.rating === "N/A" && (
                           <p className="italic">No contact details available</p>
                         )}
                       </div>
+                      {site.url && (
+                        <p className="mt-2">
+                          🌐{" "}
+                          <a
+                            href={site.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline text-[--accent-green]"
+                          >
+                            Visit Website
+                          </a>
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -182,25 +168,6 @@ export default function OutreachPage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <motion.span
-                      className={`inline-block px-3 py-1 rounded-full font-bold ${getBadgeColor(
-                        site.performanceScore
-                      )}`}
-                      animate={
-                        site.performanceScore === "N/A"
-                          ? {}
-                          : site.performanceScore >= 90
-                            ? { scale: [1, 1.1, 1] }
-                            : site.performanceScore < 50
-                              ? { x: [0, -4, 4, -4, 4, 0] }
-                              : {}
-                      }
-                      transition={{ duration: 0.8 }}
-                    >
-                      {site.performanceScore !== "N/A"
-                        ? `${site.performanceScore}%`
-                        : "Performance not available"}
-                    </motion.span>
                     <a
                       href={site.profileLink || "#"}
                       target="_blank"
