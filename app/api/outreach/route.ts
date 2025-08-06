@@ -19,6 +19,11 @@ type BusinessEntry = {
   priorityScore: number;
 };
 
+type GooglePlaceResult = {
+  place_id: string;
+  name: string;
+};
+
 async function getPageSpeedScore(url: string): Promise<number | "N/A"> {
   try {
     const res = await fetch(
@@ -61,42 +66,44 @@ export async function GET(req: Request) {
     if (mapsData.error_message) throw new Error(mapsData.error_message);
 
     const results: BusinessEntry[] = await Promise.all(
-      (mapsData.results || []).slice(0, 15).map(async (place: any) => {
-        let phone: string | null = null;
-        let website: string | null = null;
-        let performanceScore: number | "N/A" = "N/A";
+      (mapsData.results || [])
+        .slice(0, 15)
+        .map(async (place: GooglePlaceResult) => {
+          let phone: string | null = null;
+          let website: string | null = null;
+          let performanceScore: number | "N/A" = "N/A";
 
-        try {
-          const detailsRes = await fetch(
-            `${GOOGLE_PLACE_DETAILS}?place_id=${place.place_id}&fields=formatted_phone_number,website&key=${API_KEY}`
-          );
-          const details = await detailsRes.json();
-          phone = details.result?.formatted_phone_number || null;
-          website = details.result?.website || null;
+          try {
+            const detailsRes = await fetch(
+              `${GOOGLE_PLACE_DETAILS}?place_id=${place.place_id}&fields=formatted_phone_number,website&key=${API_KEY}`
+            );
+            const details = await detailsRes.json();
+            phone = details.result?.formatted_phone_number || null;
+            website = details.result?.website || null;
 
-          if (website && website.startsWith("http")) {
-            performanceScore = await getPageSpeedScore(website);
+            if (website && website.startsWith("http")) {
+              performanceScore = await getPageSpeedScore(website);
+            }
+          } catch (err) {
+            console.warn(`⚠️ Failed details for ${place.name}`, err);
           }
-        } catch (err) {
-          console.warn(`⚠️ Failed details for ${place.name}`, err);
-        }
 
-        return {
-          name: place.name,
-          url: website,
-          phone,
-          hasWebsite: !!website,
-          profileLink: `https://www.google.com/maps/place/?q=place_id:${place.place_id}`,
-          performanceScore,
-          priorityScore: !website
-            ? 100
-            : website && !website.startsWith("https")
-              ? 80
-              : performanceScore !== "N/A" && performanceScore < 50
-                ? 60
-                : 0,
-        };
-      })
+          return {
+            name: place.name,
+            url: website,
+            phone,
+            hasWebsite: !!website,
+            profileLink: `https://www.google.com/maps/place/?q=place_id:${place.place_id}`,
+            performanceScore,
+            priorityScore: !website
+              ? 100
+              : website && !website.startsWith("https")
+                ? 80
+                : performanceScore !== "N/A" && performanceScore < 50
+                  ? 60
+                  : 0,
+          };
+        })
     );
 
     const filteredResults = results.filter((entry) => {

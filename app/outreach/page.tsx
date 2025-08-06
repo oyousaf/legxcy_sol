@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSyncAlt } from "react-icons/fa";
 
@@ -28,27 +28,31 @@ export default function OutreachPage() {
   const [inputQuery, setInputQuery] = useState(query);
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
-  async function fetchData(forceRefresh = false) {
-    setLoading(true);
-    try {
-      const url = `/api/outreach?query=${encodeURIComponent(query)}${
-        forceRefresh ? "&refresh=1" : ""
-      }`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!Array.isArray(data)) return setSites([]);
-      setSites(data);
-      setLastUpdated(new Date().toLocaleString());
-    } catch {
-      setSites([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // ✅ useCallback so ESLint is happy
+  const fetchData = useCallback(
+    async (forceRefresh = false) => {
+      setLoading(true);
+      try {
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${
+          forceRefresh ? "&refresh=1" : ""
+        }`;
+        const res = await fetch(url);
+        const data: SiteData[] = await res.json();
+        if (!Array.isArray(data)) return setSites([]);
+        setSites(data);
+        setLastUpdated(new Date().toLocaleString());
+      } catch {
+        setSites([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [query]
+  );
 
   useEffect(() => {
     fetchData();
-  }, [query]);
+  }, [fetchData]);
 
   useEffect(() => {
     async function loadContacted() {
@@ -56,7 +60,7 @@ export default function OutreachPage() {
       try {
         const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
         const res = await fetch(`/api/contacted?names=${names}`);
-        const json = await res.json();
+        const json: Record<string, boolean> = await res.json();
         setContacted(json);
       } catch {
         setContacted({});
@@ -186,7 +190,6 @@ export default function OutreachPage() {
               className="px-4 py-2 rounded-lg font-semibold shadow-md"
               style={{
                 backgroundColor: "var(--accent-green)",
-                color: "var(--dark-mint)",
               }}
             >
               Search
@@ -195,7 +198,11 @@ export default function OutreachPage() {
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) =>
+              setSortBy(
+                e.target.value as "priority" | "performance" | "website"
+              )
+            }
             className="px-4 py-2 rounded-lg text-white w-full md:w-auto"
             style={{
               backgroundColor: "var(--dark-mint)",
@@ -210,7 +217,15 @@ export default function OutreachPage() {
 
           <select
             value={filterBy}
-            onChange={(e) => setFilterBy(e.target.value as any)}
+            onChange={(e) =>
+              setFilterBy(
+                e.target.value as
+                  | "all"
+                  | "noWebsite"
+                  | "contacted"
+                  | "notContacted"
+              )
+            }
             className="px-4 py-2 rounded-lg text-white w-full md:w-auto"
             style={{
               backgroundColor: "var(--dark-mint)",
@@ -339,7 +354,7 @@ export default function OutreachPage() {
                       rel="noopener noreferrer"
                       className="inline-block px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
-                      View Google Profile
+                      View Profile
                     </a>
                   </motion.div>
                 </motion.li>
