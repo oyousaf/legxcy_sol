@@ -39,13 +39,15 @@ export async function GET(req: Request) {
     const refresh = searchParams.get("refresh") === "1";
     const cacheKey = `outreach:${queryParam}`;
 
-    // Serve from KV unless refresh requested
-    if (!refresh) {
-      const cached = await kv.get<BusinessEntry[]>(cacheKey);
-      if (cached) {
-        console.log("⚡ Pulled from KV cache:", cached.length);
-        return NextResponse.json(cached);
-      }
+    if (refresh) {
+      await kv.del(cacheKey);
+      console.log("♻️ KV cache cleared for:", cacheKey);
+    }
+
+    const cached = await kv.get<BusinessEntry[]>(cacheKey);
+    if (cached) {
+      console.log("⚡ Pulled from KV cache:", cached.length);
+      return NextResponse.json(cached);
     }
 
     console.log("🔍 Fetching fresh Google Maps results for:", queryParam);
@@ -97,7 +99,6 @@ export async function GET(req: Request) {
       })
     );
 
-    // Filter only businesses matching your criteria
     const filteredResults = results.filter((entry) => {
       if (!entry.hasWebsite) return true;
       if (entry.url && !entry.url.startsWith("https")) return true;
@@ -106,14 +107,12 @@ export async function GET(req: Request) {
       return false;
     });
 
-    // Sort so no-website businesses first
-    const sorted = filteredResults.sort((a, b) =>
-      a.hasWebsite === b.hasWebsite ? 0 : a.hasWebsite ? 1 : -1
+    const sorted = filteredResults.sort(
+      (a, b) => b.priorityScore - a.priorityScore
     );
 
     console.log("✅ Fresh filtered results:", sorted.length);
 
-    // Cache for 24 hours
     await kv.set(cacheKey, sorted, { ex: 86400 });
 
     return NextResponse.json(sorted);

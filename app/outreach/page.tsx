@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaSyncAlt, FaRedo } from "react-icons/fa";
+import { FaSyncAlt } from "react-icons/fa";
 
 type SiteData = {
   name: string;
@@ -26,6 +26,7 @@ export default function OutreachPage() {
   >("all");
   const [query, setQuery] = useState("businesses in Ossett");
   const [inputQuery, setInputQuery] = useState(query);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   async function fetchData(forceRefresh = false) {
     setLoading(true);
@@ -37,6 +38,7 @@ export default function OutreachPage() {
       const data = await res.json();
       if (!Array.isArray(data)) return setSites([]);
       setSites(data);
+      setLastUpdated(new Date().toLocaleString());
     } catch {
       setSites([]);
     } finally {
@@ -103,28 +105,28 @@ export default function OutreachPage() {
     return 0;
   });
 
+  const contactedCount = Object.values(contacted).filter(Boolean).length;
+  const noWebsiteCount = sites.filter((s) => !s.hasWebsite).length;
+
   if (loading) {
     return (
-      <main className="flex items-center justify-center min-h-screen">
-        <motion.p
-          className="text-lg text-gray-400"
+      <main className="flex items-center justify-center min-h-screen bg-[var(--mossy-bg)]">
+        <motion.div
+          className="flex flex-col items-center gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          Scanning businesses…
-        </motion.p>
+          <div className="w-12 h-12 border-4 border-[var(--accent-green)] border-t-transparent rounded-full animate-spin"></div>
+        </motion.div>
       </main>
     );
   }
 
-  const contactedCount = Object.values(contacted).filter(Boolean).length;
-  const noWebsiteCount = sites.filter((s) => !s.hasWebsite).length;
-
   return (
-    <main className="flex items-center justify-center px-6 py-12">
+    <main className="flex items-center justify-center px-6 py-12 bg-[var(--mossy-bg)]">
       <div className="w-full max-w-5xl text-center">
         <motion.h1
-          className="text-4xl font-bold mb-6"
+          className="text-4xl font-bold mb-4 text-white"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -132,14 +134,30 @@ export default function OutreachPage() {
           🍉 Outreach Dashboard
         </motion.h1>
 
+        {lastUpdated && (
+          <motion.p
+            key={lastUpdated}
+            className="text-sm text-gray-400 mb-6"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            Last updated: {lastUpdated}
+          </motion.p>
+        )}
+
         <div className="mb-6 text-md text-white/90">
           🚫 <strong>{noWebsiteCount}</strong> with no website | ✅{" "}
           <strong>{contactedCount}</strong> contacted
         </div>
 
-        {/* Search + Filters + Actions */}
+        {/* Search + Filters + Refresh */}
         <motion.div
-          className="bg-[--mossy-bg] p-5 rounded-xl shadow-lg flex flex-col md:flex-row items-center gap-4 mb-10 border border-[--accent-green]/30"
+          className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-center gap-4 mb-10 border"
+          style={{
+            backgroundColor: "var(--mossy-bg)",
+            borderColor: "var(--accent-green)",
+          }}
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
@@ -156,11 +174,20 @@ export default function OutreachPage() {
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder="Search businesses..."
-              className="flex-1 px-4 py-2 rounded-lg bg-[--dark-mint] text-white placeholder-gray-400 border border-[--accent-green]/30 focus:outline-none focus:ring-2 focus:ring-[--accent-green]"
+              className="flex-1 px-4 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: "var(--dark-mint)",
+                borderColor: "var(--accent-green)",
+                borderWidth: "1px",
+              }}
             />
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-[--accent-green] hover:bg-green-500 text-sm font-semibold text-black shadow-md"
+              className="px-4 py-2 rounded-lg font-semibold shadow-md"
+              style={{
+                backgroundColor: "var(--accent-green)",
+                color: "var(--dark-mint)",
+              }}
             >
               Search
             </button>
@@ -169,7 +196,12 @@ export default function OutreachPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-[--dark-mint] text-white px-4 py-2 rounded-lg border border-[--accent-green]/30 focus:outline-none focus:ring-2 focus:ring-[--accent-green]"
+            className="px-4 py-2 rounded-lg text-white w-full md:w-auto"
+            style={{
+              backgroundColor: "var(--dark-mint)",
+              borderColor: "var(--accent-green)",
+              borderWidth: "1px",
+            }}
           >
             <option value="priority">Sort by Priority</option>
             <option value="performance">Sort by Performance</option>
@@ -179,7 +211,12 @@ export default function OutreachPage() {
           <select
             value={filterBy}
             onChange={(e) => setFilterBy(e.target.value as any)}
-            className="bg-[--dark-mint] text-white px-4 py-2 rounded-lg border border-[--accent-green]/30 focus:outline-none focus:ring-2 focus:ring-[--accent-green]"
+            className="px-4 py-2 rounded-lg text-white w-full md:w-auto"
+            style={{
+              backgroundColor: "var(--dark-mint)",
+              borderColor: "var(--accent-green)",
+              borderWidth: "1px",
+            }}
           >
             <option value="all">Show All</option>
             <option value="noWebsite">No Website Only</option>
@@ -187,23 +224,15 @@ export default function OutreachPage() {
             <option value="notContacted">Not Contacted</option>
           </select>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => fetchData(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-[--accent-green] hover:bg-green-500 rounded-lg text-sm font-semibold text-black shadow-md"
-            >
-              <FaSyncAlt /> Refresh
-            </button>
-            <button
-              onClick={() => {
-                setSortBy("priority");
-                setFilterBy("all");
-              }}
-              className="flex items-center gap-2 px-3 py-2 bg-[--dark-mint] hover:bg-[--mossy-bg] rounded-lg text-sm font-semibold text-white border border-[--accent-green]/30"
-            >
-              <FaRedo /> Reset
-            </button>
-          </div>
+          <button
+            onClick={() => fetchData(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-md w-full md:w-auto"
+            style={{
+              backgroundColor: "var(--accent-green)",
+            }}
+          >
+            <FaSyncAlt className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
         </motion.div>
 
         {sortedSites.length === 0 ? (
@@ -220,11 +249,17 @@ export default function OutreachPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
                   transition={{ duration: 0.35, delay: i * 0.05 }}
-                  className="p-6 rounded-xl bg-[--dark-mint] shadow-lg text-left border border-[--accent-green]/20"
+                  className="p-6 rounded-xl shadow-lg text-left border"
+                  style={{
+                    backgroundColor: "var(--dark-mint)",
+                    borderColor: "var(--accent-green)",
+                  }}
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start flex-col md:flex-row">
                     <div>
-                      <h2 className="text-2xl font-semibold">{site.name}</h2>
+                      <h2 className="text-2xl font-semibold text-white">
+                        {site.name}
+                      </h2>
                       <div className="text-gray-300 mt-2 space-y-1">
                         {site.phone && <p>📞 {site.phone}</p>}
                         {site.url && (
@@ -234,7 +269,8 @@ export default function OutreachPage() {
                               href={site.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="underline text-[--accent-green] hover:text-green-400"
+                              className="underline"
+                              style={{ color: "var(--accent-green)" }}
                             >
                               Visit Website
                             </a>
@@ -246,16 +282,24 @@ export default function OutreachPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <span
+                    <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
+                      <motion.span
                         className={`px-3 py-1 rounded-full font-bold ${getPerfBadgeColor(
                           site.performanceScore
                         )}`}
+                        animate={
+                          site.performanceScore !== "N/A" &&
+                          site.performanceScore < 50
+                            ? { scale: [1, 1.05, 1] }
+                            : {}
+                        }
+                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
                         {site.performanceScore !== "N/A"
                           ? `${site.performanceScore}%`
                           : "No Score"}
-                      </span>
+                      </motion.span>
+
                       <span className="px-3 py-1 rounded-full font-bold bg-purple-600">
                         Priority: {site.priorityScore}
                       </span>
