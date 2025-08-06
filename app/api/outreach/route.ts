@@ -29,7 +29,7 @@ export async function GET(req: Request) {
 
     const cached = await kv.get<BusinessEntry[]>(cacheKey);
     if (cached) {
-      console.log("⚡ HIT from KV cache:", cached.length);
+      console.log("⚡ Served from KV cache:", cached.length);
       return NextResponse.json(cached);
     }
 
