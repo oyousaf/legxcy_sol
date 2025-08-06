@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-// Batch GET
+// Batch GET (unchanged)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const namesParam = searchParams.get("names");
 
-  if (!namesParam) {
-    return NextResponse.json({});
-  }
+  if (!namesParam) return NextResponse.json({});
 
   const names = namesParam.split(",").map((n) => decodeURIComponent(n));
   const results: Record<string, boolean> = {};
@@ -21,20 +19,28 @@ export async function GET(req: Request) {
   return NextResponse.json(results);
 }
 
-// Single update POST
+// Batch POST
 export async function POST(req: Request) {
   try {
-    const { name, contacted } = await req.json();
-    if (!name) {
-      return NextResponse.json({ error: "Missing name" }, { status: 400 });
+    const { updates } = await req.json();
+
+    if (!Array.isArray(updates)) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    await kv.set(`contacted:${name}`, contacted, { ex: 2592000 });
-    return NextResponse.json({ success: true });
+    await Promise.all(
+      updates.map(async ({ name, contacted }) => {
+        if (name) {
+          await kv.set(`contacted:${name}`, contacted, { ex: 2592000 }); // 30 days
+        }
+      })
+    );
+
+    return NextResponse.json({ success: true, updated: updates.length });
   } catch (err) {
-    console.error("❌ Failed to update contacted:", err);
+    console.error("❌ Failed to batch update contacted:", err);
     return NextResponse.json(
-      { error: "Failed to update status" },
+      { error: "Failed to update statuses" },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type SiteData = {
@@ -16,6 +16,8 @@ export default function OutreachPage() {
   const [sites, setSites] = useState<SiteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacted, setContacted] = useState<Record<string, boolean>>({});
+  const updateQueue = useRef<{ name: string; contacted: boolean }[]>([]);
+  const flushTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch outreach data
   useEffect(() => {
@@ -50,19 +52,36 @@ export default function OutreachPage() {
     loadContacted();
   }, [sites]);
 
-  // Mark as contacted/uncontacted
-  const markAsContacted = async (name: string, value: boolean) => {
-    setContacted((prev) => ({ ...prev, [name]: value })); // optimistic update
+  // Queue + batch flush logic
+  const flushUpdates = async () => {
+    if (updateQueue.current.length === 0) return;
+
+    const updates = [...updateQueue.current];
+    updateQueue.current = [];
+
     try {
       await fetch("/api/contacted", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, contacted: value }),
+        body: JSON.stringify({ updates }),
       });
-    } catch {
-      // rollback if failed
-      setContacted((prev) => ({ ...prev, [name]: !value }));
+    } catch (err) {
+      console.error("❌ Batch update failed:", err);
     }
+  };
+
+  const scheduleFlush = () => {
+    if (flushTimer.current) return;
+    flushTimer.current = setTimeout(() => {
+      flushUpdates();
+      flushTimer.current = null;
+    }, 2000); // flush every 2s
+  };
+
+  const markAsContacted = (name: string, value: boolean) => {
+    setContacted((prev) => ({ ...prev, [name]: value }));
+    updateQueue.current.push({ name, contacted: value });
+    scheduleFlush();
   };
 
   if (loading) {
