@@ -214,6 +214,7 @@ export default function OutreachPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            style={{ minHeight: "900px" }}
           >
             <AnimatePresence initial={false}>
               {filteredSites.map((site, i) => (
