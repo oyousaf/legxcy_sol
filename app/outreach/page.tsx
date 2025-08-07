@@ -1,4 +1,3 @@
-// app/outreach/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -104,6 +103,7 @@ export default function OutreachPage() {
 
   const sortedSites = [...filteredSites].sort((a, b) => {
     if (sortBy === "priority") return b.priorityScore - a.priorityScore;
+
     if (sortBy === "performance") {
       const scoreA =
         a.performanceScore !== "N/A" &&
@@ -118,9 +118,11 @@ export default function OutreachPage() {
 
       return scoreB - scoreA;
     }
+
     if (sortBy === "website") {
-      return Number(a.hasWebsite) - Number(b.hasWebsite);
+      return Number(b.hasWebsite) - Number(a.hasWebsite);
     }
+
     return 0;
   });
 

@@ -9,18 +9,26 @@ const PAGESPEED_API =
   "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const API_KEY = process.env.GOOGLE_SERVER_API_KEY!;
 
+interface PageSpeedResponse {
+  lighthouseResult?: {
+    categories?: {
+      performance?: {
+        score?: number;
+      };
+    };
+  };
+}
+
 type BusinessEntry = {
   name: string;
   url: string | null;
   phone: string | null;
   hasWebsite: boolean;
   profileLink: string | null;
-  performanceScore:
-    | {
-        mobile: number | "N/A";
-        desktop: number | "N/A";
-      }
-    | "N/A";
+  performanceScore: {
+    mobile: number | "N/A";
+    desktop: number | "N/A";
+  };
   priorityScore: number;
 };
 
@@ -29,21 +37,21 @@ type GooglePlaceResult = {
   name: string;
 };
 
-async function getPageSpeedScore(url: string): Promise<{
-  mobile: number | "N/A";
-  desktop: number | "N/A";
-}> {
+const getScore = (data: PageSpeedResponse): number | "N/A" =>
+  data?.lighthouseResult?.categories?.performance?.score !== undefined
+    ? Math.round(data.lighthouseResult.categories.performance.score * 100)
+    : "N/A";
+
+async function getPageSpeedScore(
+  url: string
+): Promise<{ mobile: number | "N/A"; desktop: number | "N/A" }> {
   try {
     const [mobileRes, desktopRes] = await Promise.all([
       fetch(
-        `${PAGESPEED_API}?url=${encodeURIComponent(
-          url
-        )}&strategy=mobile&key=${API_KEY}`
+        `${PAGESPEED_API}?url=${encodeURIComponent(url)}&strategy=mobile&key=${API_KEY}`
       ),
       fetch(
-        `${PAGESPEED_API}?url=${encodeURIComponent(
-          url
-        )}&strategy=desktop&key=${API_KEY}`
+        `${PAGESPEED_API}?url=${encodeURIComponent(url)}&strategy=desktop&key=${API_KEY}`
       ),
     ]);
 
@@ -51,11 +59,6 @@ async function getPageSpeedScore(url: string): Promise<{
       mobileRes.json(),
       desktopRes.json(),
     ]);
-
-    const getScore = (data: any) =>
-      data?.lighthouseResult?.categories?.performance?.score !== undefined
-        ? Math.round(data.lighthouseResult.categories.performance.score * 100)
-        : "N/A";
 
     return {
       mobile: getScore(mobileData),
@@ -84,11 +87,9 @@ export async function GET(req: Request) {
       return NextResponse.json(cached);
     }
 
-    console.log("🔍 Fetching fresh Google Maps results for:", queryParam);
     const mapsRes = await fetch(
       `${GOOGLE_TEXT_SEARCH}?query=${encodeURIComponent(queryParam)}&key=${API_KEY}`
     );
-
     if (!mapsRes.ok)
       throw new Error(`Google Maps API failed: ${mapsRes.status}`);
     const mapsData = await mapsRes.json();
@@ -100,12 +101,10 @@ export async function GET(req: Request) {
         .map(async (place: GooglePlaceResult) => {
           let phone: string | null = null;
           let website: string | null = null;
-          let performanceScore:
-            | {
-                mobile: number | "N/A";
-                desktop: number | "N/A";
-              }
-            | "N/A" = "N/A";
+          let performanceScore: BusinessEntry["performanceScore"] = {
+            mobile: "N/A",
+            desktop: "N/A",
+          };
 
           try {
             const detailsRes = await fetch(
@@ -122,8 +121,7 @@ export async function GET(req: Request) {
             console.warn(`⚠️ Failed details for ${place.name}`, err);
           }
 
-          const mobileScore =
-            performanceScore !== "N/A" ? performanceScore.mobile : "N/A";
+          const mobileScore = performanceScore.mobile;
 
           return {
             name: place.name,
@@ -136,7 +134,7 @@ export async function GET(req: Request) {
               ? 100
               : website && !website.startsWith("https")
                 ? 80
-                : mobileScore !== "N/A" && mobileScore < 50
+                : typeof mobileScore === "number" && mobileScore < 50
                   ? 60
                   : 0,
           };
@@ -146,17 +144,13 @@ export async function GET(req: Request) {
     const filteredResults = results.filter((entry) => {
       if (!entry.hasWebsite) return true;
       if (entry.url && !entry.url.startsWith("https")) return true;
-      const score = entry.performanceScore;
-      if (score !== "N/A" && score.mobile !== "N/A" && score.mobile < 50)
-        return true;
-      return false;
+      const score = entry.performanceScore.mobile;
+      return typeof score === "number" && score < 50;
     });
 
     const sorted = filteredResults.sort(
       (a, b) => b.priorityScore - a.priorityScore
     );
-
-    console.log("✅ Fresh filtered results:", sorted.length);
     await kv.set(cacheKey, sorted, { ex: 86400 });
 
     return NextResponse.json(sorted);
