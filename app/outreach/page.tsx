@@ -1,16 +1,23 @@
+// app/outreach/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSyncAlt } from "react-icons/fa";
 
+/** Type for business site data */
 type SiteData = {
   name: string;
   url: string | null;
   phone?: string | null;
   hasWebsite: boolean;
   profileLink?: string | null;
-  performanceScore: number | "N/A";
+  performanceScore:
+    | {
+        mobile: number | "N/A";
+        desktop: number | "N/A";
+      }
+    | "N/A";
   priorityScore: number;
 };
 
@@ -28,12 +35,11 @@ export default function OutreachPage() {
   const [inputQuery, setInputQuery] = useState(query);
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
-  // ✅ useCallback so ESLint is happy
   const fetchData = useCallback(
     async (forceRefresh = false) => {
       setLoading(true);
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}${
+        const url = `/api/outreach?query=${encodeURIComponent(query)}$${
           forceRefresh ? "&refresh=1" : ""
         }`;
         const res = await fetch(url);
@@ -99,8 +105,17 @@ export default function OutreachPage() {
   const sortedSites = [...filteredSites].sort((a, b) => {
     if (sortBy === "priority") return b.priorityScore - a.priorityScore;
     if (sortBy === "performance") {
-      const scoreA = a.performanceScore === "N/A" ? -1 : a.performanceScore;
-      const scoreB = b.performanceScore === "N/A" ? -1 : b.performanceScore;
+      const scoreA =
+        a.performanceScore !== "N/A" &&
+        typeof a.performanceScore.mobile === "number"
+          ? a.performanceScore.mobile
+          : -1;
+      const scoreB =
+        b.performanceScore !== "N/A" &&
+        typeof b.performanceScore.mobile === "number"
+          ? b.performanceScore.mobile
+          : -1;
+
       return scoreB - scoreA;
     }
     if (sortBy === "website") {
@@ -112,22 +127,8 @@ export default function OutreachPage() {
   const contactedCount = Object.values(contacted).filter(Boolean).length;
   const noWebsiteCount = sites.filter((s) => !s.hasWebsite).length;
 
-  if (loading) {
-    return (
-      <main className="flex items-center justify-center min-h-screen bg-[var(--mossy-bg)]">
-        <motion.div
-          className="flex flex-col items-center gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="w-12 h-12 border-4 border-[var(--accent-green)] border-t-transparent rounded-full animate-spin"></div>
-        </motion.div>
-      </main>
-    );
-  }
-
   return (
-    <main className="flex items-center justify-center px-6 py-12 bg-[var(--mossy-bg)]">
+    <main className="flex flex-col items-center justify-center px-6 py-12 bg-[var(--mossy-bg)] min-h-screen">
       <div className="w-full max-w-5xl text-center">
         <motion.h1
           className="text-4xl font-bold mb-4 text-white"
@@ -155,7 +156,7 @@ export default function OutreachPage() {
           <strong>{contactedCount}</strong> contacted
         </div>
 
-        {/* Search + Filters + Refresh */}
+        {/* search, filters, refresh button */}
         <motion.div
           className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-center gap-4 mb-10 border"
           style={{
@@ -188,9 +189,7 @@ export default function OutreachPage() {
             <button
               type="submit"
               className="px-4 py-2 rounded-lg font-semibold shadow-md"
-              style={{
-                backgroundColor: "var(--accent-green)",
-              }}
+              style={{ backgroundColor: "var(--accent-green)" }}
             >
               Search
             </button>
@@ -242,9 +241,7 @@ export default function OutreachPage() {
           <button
             onClick={() => fetchData(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-md w-full md:w-auto"
-            style={{
-              backgroundColor: "var(--accent-green)",
-            }}
+            style={{ backgroundColor: "var(--accent-green)" }}
           >
             <FaSyncAlt className={loading ? "animate-spin" : ""} /> Refresh
           </button>
@@ -291,29 +288,32 @@ export default function OutreachPage() {
                             </a>
                           </p>
                         )}
-                        {!site.phone && !site.url && (
-                          <p className="italic">No contact details available</p>
-                        )}
                       </div>
                     </div>
 
                     <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
-                      <motion.span
-                        className={`px-3 py-1 rounded-full font-bold ${getPerfBadgeColor(
-                          site.performanceScore
-                        )}`}
-                        animate={
-                          site.performanceScore !== "N/A" &&
-                          site.performanceScore < 50
-                            ? { scale: [1, 1.05, 1] }
-                            : {}
-                        }
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        {site.performanceScore !== "N/A"
-                          ? `${site.performanceScore}%`
-                          : "No Score"}
-                      </motion.span>
+                      {site.performanceScore !== "N/A" ? (
+                        <div className="flex gap-2">
+                          <span
+                            className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(
+                              site.performanceScore.mobile
+                            )}`}
+                          >
+                            📱 {site.performanceScore.mobile}%
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(
+                              site.performanceScore.desktop
+                            )}`}
+                          >
+                            🖥️ {site.performanceScore.desktop}%
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full font-bold bg-gray-600 text-xs">
+                          No Score
+                        </span>
+                      )}
 
                       <span className="px-3 py-1 rounded-full font-bold bg-purple-600">
                         Priority: {site.priorityScore}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-// Batch GET (unchanged)
+// Batch GET
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const namesParam = searchParams.get("names");
