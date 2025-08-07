@@ -154,7 +154,7 @@ export default function OutreachPage() {
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder="Search businesses..."
-              className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-400 focus:outline-none focus:ring-2 w-full sm:w-64"
+              className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-200 focus:outline-none focus:ring-2 w-full sm:w-64"
               style={{
                 backgroundColor: "var(--dark-mint)",
                 borderColor: "var(--accent-green)",
