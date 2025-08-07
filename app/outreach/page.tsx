@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaSyncAlt } from "react-icons/fa";
+import { FaSyncAlt, FaGoogle, FaFacebook } from "react-icons/fa";
 
 type SiteData = {
   name: string;
@@ -317,7 +317,7 @@ export default function OutreachPage() {
                   </div>
 
                   <motion.div
-                    className="mt-4"
+                    className="mt-4 flex gap-3 flex-wrap"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
@@ -326,9 +326,20 @@ export default function OutreachPage() {
                       href={site.profileLink || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
                       View Profile
+                    </a>
+
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(
+                        `${site.name} ${query} site:facebook.com`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <FaFacebook />
                     </a>
                   </motion.div>
                 </motion.li>
