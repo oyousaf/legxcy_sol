@@ -186,7 +186,15 @@ export default function OutreachPage() {
           {/* Filter */}
           <select
             value={filterBy}
-            onChange={(e) => setFilterBy(e.target.value as any)}
+            onChange={(e) =>
+              setFilterBy(
+                e.target.value as
+                  | "all"
+                  | "noWebsite"
+                  | "contacted"
+                  | "notContacted"
+              )
+            }
             className="px-4 py-2 rounded-lg text-white w-full sm:w-56 text-center"
             style={{
               backgroundColor: "var(--dark-mint)",
