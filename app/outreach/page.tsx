@@ -132,7 +132,7 @@ export default function OutreachPage() {
         </div>
 
         <motion.div
-          className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-center gap-4 mb-10 border"
+          className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-stretch gap-3 md:gap-4 mb-10 border"
           style={{
             backgroundColor: "var(--mossy-bg)",
             borderColor: "var(--accent-green)",
@@ -141,19 +141,20 @@ export default function OutreachPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
+          {/* Search Form */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               setQuery(inputQuery);
             }}
-            className="flex w-full md:w-auto gap-2"
+            className="flex flex-col sm:flex-row w-full md:w-auto gap-2"
           >
             <input
               type="text"
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder="Search businesses..."
-              className="flex-1 px-4 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+              className="px-4 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 w-full sm:w-64"
               style={{
                 backgroundColor: "var(--dark-mint)",
                 borderColor: "var(--accent-green)",
@@ -162,13 +163,17 @@ export default function OutreachPage() {
             />
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg font-semibold shadow-md"
-              style={{ backgroundColor: "var(--accent-green)" }}
+              className="px-4 py-2 rounded-lg font-semibold shadow-md w-full sm:w-auto text-white"
+              style={{
+                backgroundColor: "var(--accent-green)",
+                transition: "background-color 0.2s ease-in-out",
+              }}
             >
-              Search
+              🔍 Search
             </button>
           </form>
 
+          {/* Filter Dropdown */}
           <select
             value={filterBy}
             onChange={(e) =>
@@ -180,7 +185,7 @@ export default function OutreachPage() {
                   | "notContacted"
               )
             }
-            className="px-4 py-2 rounded-lg text-white w-full md:w-auto"
+            className="px-4 py-2 rounded-lg text-white w-full sm:w-56"
             style={{
               backgroundColor: "var(--dark-mint)",
               borderColor: "var(--accent-green)",
@@ -193,10 +198,14 @@ export default function OutreachPage() {
             <option value="notContacted">Not Contacted</option>
           </select>
 
+          {/* Refresh Button */}
           <button
             onClick={() => fetchData(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-md w-full md:w-auto"
-            style={{ backgroundColor: "var(--accent-green)" }}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-md text-white w-full sm:w-auto"
+            style={{
+              backgroundColor: "var(--accent-green)",
+              transition: "background-color 0.2s ease-in-out",
+            }}
           >
             <FaSyncAlt className={loading ? "animate-spin" : ""} /> Refresh
           </button>
