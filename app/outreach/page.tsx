@@ -147,14 +147,14 @@ export default function OutreachPage() {
               e.preventDefault();
               setQuery(inputQuery);
             }}
-            className="flex flex-col sm:flex-row w-full md:w-auto gap-2"
+            className="flex flex-col sm:flex-row w-full md:w-auto gap-2 t"
           >
             <input
               type="text"
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder="Search businesses..."
-              className="px-4 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 w-full sm:w-64"
+              className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-400 focus:outline-none focus:ring-2 w-full sm:w-64"
               style={{
                 backgroundColor: "var(--dark-mint)",
                 borderColor: "var(--accent-green)",
@@ -185,7 +185,7 @@ export default function OutreachPage() {
                   | "notContacted"
               )
             }
-            className="px-4 py-2 rounded-lg text-white w-full sm:w-56"
+            className="px-4 py-2 rounded-lg text-white w-full sm:w-56 text-center"
             style={{
               backgroundColor: "var(--dark-mint)",
               borderColor: "var(--accent-green)",
