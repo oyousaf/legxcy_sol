@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSyncAlt } from "react-icons/fa";
 
-/** Type for business site data */
 type SiteData = {
   name: string;
   url: string | null;
@@ -24,9 +23,6 @@ export default function OutreachPage() {
   const [sites, setSites] = useState<SiteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacted, setContacted] = useState<Record<string, boolean>>({});
-  const [sortBy, setSortBy] = useState<"priority" | "performance" | "website">(
-    "priority"
-  );
   const [filterBy, setFilterBy] = useState<
     "all" | "noWebsite" | "contacted" | "notContacted"
   >("all");
@@ -38,7 +34,7 @@ export default function OutreachPage() {
     async (forceRefresh = false) => {
       setLoading(true);
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}$${
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${
           forceRefresh ? "&refresh=1" : ""
         }`;
         const res = await fetch(url);
@@ -94,37 +90,14 @@ export default function OutreachPage() {
     return "bg-red-600";
   };
 
-  const filteredSites = sites.filter((site) => {
-    if (filterBy === "noWebsite") return !site.hasWebsite;
-    if (filterBy === "contacted") return contacted[site.name];
-    if (filterBy === "notContacted") return !contacted[site.name];
-    return true;
-  });
-
-  const sortedSites = [...filteredSites].sort((a, b) => {
-    if (sortBy === "priority") return b.priorityScore - a.priorityScore;
-
-    if (sortBy === "performance") {
-      const scoreA =
-        a.performanceScore !== "N/A" &&
-        typeof a.performanceScore.mobile === "number"
-          ? a.performanceScore.mobile
-          : -1;
-      const scoreB =
-        b.performanceScore !== "N/A" &&
-        typeof b.performanceScore.mobile === "number"
-          ? b.performanceScore.mobile
-          : -1;
-
-      return scoreB - scoreA;
-    }
-
-    if (sortBy === "website") {
-      return Number(b.hasWebsite) - Number(a.hasWebsite);
-    }
-
-    return 0;
-  });
+  const filteredSites = sites
+    .filter((site) => {
+      if (filterBy === "noWebsite") return !site.hasWebsite;
+      if (filterBy === "contacted") return contacted[site.name];
+      if (filterBy === "notContacted") return !contacted[site.name];
+      return true;
+    })
+    .sort((a, b) => b.priorityScore - a.priorityScore); // Always sort by priority
 
   const contactedCount = Object.values(contacted).filter(Boolean).length;
   const noWebsiteCount = sites.filter((s) => !s.hasWebsite).length;
@@ -158,7 +131,6 @@ export default function OutreachPage() {
           <strong>{contactedCount}</strong> contacted
         </div>
 
-        {/* search, filters, refresh button */}
         <motion.div
           className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-center gap-4 mb-10 border"
           style={{
@@ -198,25 +170,6 @@ export default function OutreachPage() {
           </form>
 
           <select
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(
-                e.target.value as "priority" | "performance" | "website"
-              )
-            }
-            className="px-4 py-2 rounded-lg text-white w-full md:w-auto"
-            style={{
-              backgroundColor: "var(--dark-mint)",
-              borderColor: "var(--accent-green)",
-              borderWidth: "1px",
-            }}
-          >
-            <option value="priority">Sort by Priority</option>
-            <option value="performance">Sort by Performance</option>
-            <option value="website">Sort by Website Status</option>
-          </select>
-
-          <select
             value={filterBy}
             onChange={(e) =>
               setFilterBy(
@@ -249,20 +202,28 @@ export default function OutreachPage() {
           </button>
         </motion.div>
 
-        {sortedSites.length === 0 ? (
+        {filteredSites.length === 0 ? (
           <p className="text-xl text-gray-400 italic">
             No businesses match your filters.
           </p>
         ) : (
-          <ul className="space-y-6">
-            <AnimatePresence>
-              {sortedSites.map((site, i) => (
+          <motion.ul
+            layout
+            className="space-y-6"
+            initial={false}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AnimatePresence initial={false}>
+              {filteredSites.map((site, i) => (
                 <motion.li
+                  layout
                   key={site.name}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.35, delay: i * 0.05 }}
+                  transition={{ duration: 0.35, delay: i * 0.03 }}
                   className="p-6 rounded-xl shadow-lg text-left border"
                   style={{
                     backgroundColor: "var(--dark-mint)",
@@ -294,7 +255,8 @@ export default function OutreachPage() {
                     </div>
 
                     <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
-                      {site.performanceScore !== "N/A" ? (
+                      {site.performanceScore !== "N/A" &&
+                      typeof site.performanceScore === "object" ? (
                         <div className="flex gap-2">
                           <span
                             className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(
@@ -362,7 +324,7 @@ export default function OutreachPage() {
                 </motion.li>
               ))}
             </AnimatePresence>
-          </ul>
+          </motion.ul>
         )}
       </div>
     </main>

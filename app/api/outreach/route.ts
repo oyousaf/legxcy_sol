@@ -97,7 +97,7 @@ export async function GET(req: Request) {
 
     const results: BusinessEntry[] = await Promise.all(
       (mapsData.results || [])
-        .slice(0, 15)
+        .slice(0, 20)
         .map(async (place: GooglePlaceResult) => {
           let phone: string | null = null;
           let website: string | null = null;
