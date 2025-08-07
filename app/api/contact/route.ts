@@ -126,11 +126,11 @@ Sent via Legxcy Solutions Website
 
           Thank you for contacting Legxcy Solutions. We’ve successfully received your message and will be in touch with you shortly.
 
-          In the meantime, we’d be delighted if you could share a few details regarding your project objectives, anticipated budget, and preferred timeline. This will allow us to craft a tailored proposal aligned with your vision and ensure we can initiate your project efficiently and effectively.
+          In the meantime, we’d love to hear a little about your project goals, the features you have in mind, and roughly how many pages or sections you’d like. 
+          This will enable us to craft a tailored proposal aligned with your vision and ensure we can initiate your project efficiently and effectively.
 
           Best regards,
-          Legxcy Solutions
-                `,
+          Legxcy Solutions`,
       html: `
                   <div style="background-color:#0f2f23;padding:15px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
                     <table width="100%" cellspacing="0" cellpadding="0" border="0"
