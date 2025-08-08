@@ -326,21 +326,21 @@ export default function OutreachPage() {
                     transition={{ delay: 0.2 }}
                   >
                     <a
-                      href={site.profileLink || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
-                    >
-                      <FaGoogle />
-                    </a>
-
-                    <a
                       href={`https://www.google.com/search?q=${encodeURIComponent(`${site.name} ${query} site:facebook.com`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
                     >
                       <FaFacebook />
+                    </a>
+
+                    <a
+                      href={site.profileLink || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
+                    >
+                      <FaGoogle />
                     </a>
                   </motion.div>
                 </motion.li>
