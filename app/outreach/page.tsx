@@ -329,7 +329,7 @@ export default function OutreachPage() {
                       href={site.profileLink || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
+                      className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
                       <FaGoogle />
                     </a>
@@ -338,7 +338,7 @@ export default function OutreachPage() {
                       href={`https://www.google.com/search?q=${encodeURIComponent(`${site.name} ${query} site:facebook.com`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
+                      className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
                     >
                       <FaFacebook />
                     </a>
