@@ -29,11 +29,11 @@ const services = [
     title: "Web Apps",
     desc: "Interactive, custom web applications built for performance, scalability, and ease of use.",
   },
-  {
+  /*{
     icon: <FaPenNib size={32} />,
     title: "Application Development",
     desc: "Custom web and desktop applications built to meet your unique business needs.",
-  },
+  },*/
   {
     icon: <FaMobileAlt size={32} />,
     title: "Responsive & Mobile‑First Web Design",
@@ -49,11 +49,11 @@ const services = [
     title: "SEO‑Optimised Business Websites",
     desc: "Websites designed with built‑in SEO best practices to help you rank higher on Google.",
   },
-  {
+  /*{
     icon: <FaShoppingCart size={32} />,
     title: "E‑commerce Websites",
     desc: "Custom online stores with secure checkout and user‑friendly navigation.",
-  },
+  },*/
   {
     icon: <FaUsers size={32} />,
     title: "UX/UI Design for Small Businesses",
