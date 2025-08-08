@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaSyncAlt, FaFacebook } from "react-icons/fa";
+import { FaSyncAlt, FaFacebook, FaGoogle } from "react-icons/fa";
 
 type SiteData = {
   name: string;
@@ -331,7 +331,7 @@ export default function OutreachPage() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold bg-red-600 hover:bg-red-700"
                     >
-                      View Profile
+                      <FaGoogle />
                     </a>
 
                     <a
