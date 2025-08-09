@@ -14,6 +14,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://legxcysol.dev"),
   title: "Legxcy Solutions",
   description: "Where Vision Meets Innovation",
   keywords: [
@@ -33,7 +34,6 @@ export const metadata: Metadata = {
     "Mobile-first web design",
     "High-performance websites",
   ],
-  metadataBase: new URL("https://legxcysol.dev"),
   alternates: { canonical: "/" },
   openGraph: {
     title: "Legxcy Solutions",
@@ -57,7 +57,14 @@ export const metadata: Metadata = {
     description: "Where Vision Meets Innovation",
     images: ["/og-image.jpg"],
   },
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {
