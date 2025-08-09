@@ -5,11 +5,12 @@ module.exports = {
   sitemapSize: 7000,
   changefreq: "weekly",
   priority: 0.7,
-  exclude: ["/api/*", "/outreach"],
+  exclude: ["/api/*", "/outreach", "/outreach/*"],
   robotsTxtOptions: {
     policies: [
       {
         userAgent: "*",
+        disallow: ["/outreach", "/outreach/"],
         allow: "/",
       },
     ],
