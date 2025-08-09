@@ -94,7 +94,7 @@ export default function RootLayout({
           rel="preload"
           href="/logo.webp"
           as="image"
-          type="image/png"
+          type="image/webp"
           fetchPriority="high"
         />
 
@@ -118,7 +118,7 @@ export default function RootLayout({
           </>
         )}
 
-        {/* Structured Data for SEO */}
+        {/* Structured Data for SEO (Privacy-friendly) */}
         <Script
           id="structured-data"
           type="application/ld+json"
@@ -140,11 +140,11 @@ export default function RootLayout({
               contactPoint: {
                 "@type": "ContactPoint",
                 contactType: "Customer Support",
-                email: "info@legxcysol.dev",
-                telephone: "+447597866002",
-                url: "https://legxcysol.dev",
+                url: "https://legxcysol.dev/contact",
               },
-              sameAs: ["https://legxcysol.dev"],
+              sameAs: [
+                "https://www.linkedin.com/company/legxcy-solutions/",
+              ],
             }),
           }}
         />
