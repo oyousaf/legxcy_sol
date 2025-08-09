@@ -142,9 +142,7 @@ export default function RootLayout({
                 contactType: "Customer Support",
                 url: "https://legxcysol.dev/contact",
               },
-              sameAs: [
-                "https://www.linkedin.com/company/legxcy-solutions/",
-              ],
+              sameAs: ["https://www.linkedin.com/company/legxcy-solutions/"],
             }),
           }}
         />
