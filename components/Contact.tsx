@@ -21,7 +21,7 @@ type ContactFormData = {
   name: string;
   email: string;
   message: string;
-  website?: string;
+  website?: string; // honeypot
 };
 
 export default function Contact() {
@@ -31,6 +31,7 @@ export default function Contact() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ContactFormData>();
+
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState("");
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -38,7 +39,7 @@ export default function Contact() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const widgetRef = useRef<HTMLDivElement | null>(null);
 
-  // Lazy-load Turnstile when form comes into view
+  // Lazy-load Turnstile widget
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -62,13 +63,14 @@ export default function Contact() {
       },
       { threshold: 0.3 }
     );
+
     if (formRef.current) observer.observe(formRef.current);
     return () => observer.disconnect();
   }, [scriptLoaded]);
 
   // Handle form submission
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website) return;
+    if (data.website) return; // honeypot trap
     if (!token) return toast.error("Please complete the verification.");
 
     try {
@@ -77,15 +79,27 @@ export default function Contact() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, token }),
       });
+
       if (!res.ok) throw new Error("Failed to send message");
 
-      // ✅ Fire GA event for conversion tracking
+      // ✅ GA4-compatible event tracking
       gtag.event({
         action: "form_submit",
-        category: "Contact",
-        label: "Contact Form",
-        value: 1,
+        params: {
+          category: "Contact",
+          label: "Contact Form",
+          value: 1,
+        },
       });
+
+      // Optional: direct GA4 call for DebugView
+      if (typeof window.gtag !== "undefined") {
+        window.gtag("event", "form_submit", {
+          category: "Contact",
+          label: "Contact Form",
+          value: 1,
+        });
+      }
 
       toast.success("Message sent successfully!");
       setSent(true);
@@ -105,14 +119,14 @@ export default function Contact() {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--mossy-bg)]/95 via-[var(--mossy-bg)]/85 to-[var(--dark-mint)]/95 -z-10" />
 
-      {/* Section heading */}
+      {/* Heading */}
       <motion.h2
         id="contact-heading"
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
+        className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2]"
       >
         Let’s Build Something Remarkable
       </motion.h2>
@@ -200,7 +214,7 @@ export default function Contact() {
           )}
         </motion.div>
 
-        {/* Turnstile widget */}
+        {/* Turnstile */}
         <div ref={widgetRef} className="text-center min-h-[70px]" />
 
         {/* Submit button */}

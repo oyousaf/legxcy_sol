@@ -12,20 +12,12 @@ export const pageview = (url: string) => {
 // Track custom events
 export const event = ({
   action,
-  category,
-  label,
-  value,
+  params = {},
 }: {
   action: string;
-  category?: string;
-  label?: string;
-  value?: number;
+  params?: Record<string, any>;
 }) => {
   if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", action, {
-      event_category: category,
-      event_label: label,
-      value,
-    });
+    window.gtag("event", action, params);
   }
 };
