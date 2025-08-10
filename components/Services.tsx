@@ -4,12 +4,9 @@ import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { useRef } from "react";
 import {
   FaLaptopCode,
-  FaGlobe,
-  FaPenNib,
   FaMobileAlt,
   FaSyncAlt,
   FaSearch,
-  FaShoppingCart,
   FaUsers,
   FaTachometerAlt,
   FaUniversalAccess,
@@ -24,12 +21,12 @@ const services = [
     title: "Web Development",
     desc: "End‑to‑end web development services using modern frameworks for fast, reliable results.",
   },
-  {
+  /*{
     icon: <FaGlobe size={32} />,
     title: "Web Apps",
     desc: "Interactive, custom web applications built for performance, scalability, and ease of use.",
   },
-  /*{
+  {
     icon: <FaPenNib size={32} />,
     title: "Application Development",
     desc: "Custom web and desktop applications built to meet your unique business needs.",
@@ -137,7 +134,7 @@ export default function Services() {
         </motion.p>
 
         {/* Service cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {services.map((s, i) => (
             <motion.div
               key={i}
