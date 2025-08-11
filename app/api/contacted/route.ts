@@ -9,14 +9,24 @@ export async function GET(req: Request) {
   if (!namesParam) return NextResponse.json({});
 
   const names = namesParam.split(",").map((n) => decodeURIComponent(n));
-  const results: Record<string, boolean> = {};
+  const keys = names.map((name) => `contacted:${name}`);
 
-  for (const name of names) {
-    const key = `contacted:${name}`;
-    results[name] = (await kv.get<boolean>(key)) ?? false;
+  try {
+    // ✅ Single request for all keys
+    const values = await kv.mget<boolean[]>(...keys);
+
+    const results = Object.fromEntries(
+      names.map((name, i) => [name, values[i] ?? false])
+    );
+
+    return NextResponse.json(results);
+  } catch (err) {
+    console.error("❌ Failed to read contacted statuses:", err);
+    return NextResponse.json(
+      { error: "Failed to read statuses" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(results);
 }
 
 // Batch POST
@@ -28,6 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
+    // ✅ Parallel updates
     await Promise.all(
       updates.map(async ({ name, contacted }) => {
         if (name) {

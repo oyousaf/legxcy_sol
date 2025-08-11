@@ -38,7 +38,9 @@ function ScoreBadge({ label, value }: { label: string; value: PerfNumber }) {
   return (
     <span
       className={`px-3 py-1 rounded-full font-bold text-xs ${badgeColour(value)}`}
-      aria-label={`${label} performance ${value === "N/A" ? "not available" : `${value} percent`}`}
+      aria-label={`${label} performance ${
+        value === "N/A" ? "not available" : `${value} percent`
+      }`}
       title={`${label}: ${value === "N/A" ? "N/A" : `${value}%`}`}
     >
       {label} {value === "N/A" ? "N/A" : `${value}%`}
@@ -90,7 +92,9 @@ export default function OutreachPage() {
       fetchAbortRef.current = ctrl;
 
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}${forceRefresh ? "&refresh=1" : ""}`;
+        const url = `/api/outreach?query=${encodeURIComponent(
+          query
+        )}${forceRefresh ? "&refresh=1" : ""}`;
         const res = await fetch(url, {
           signal: ctrl.signal,
           cache: "no-store",
@@ -150,35 +154,47 @@ export default function OutreachPage() {
     return () => fetchAbortRef.current?.abort();
   }, [fetchData, query]);
 
-  useEffect(() => {
-    async function loadContacted() {
-      if (!sites.length) return;
-      try {
-        const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
-        const res = await fetch(`/api/contacted?names=${names}`);
-        if (!res.ok) throw new Error("contacted fetch failed");
-        const json = (await res.json()) as Record<string, boolean>;
-        setContacted(json);
-      } catch {
-        setContacted({});
-      }
+  const loadContacted = useCallback(async () => {
+    if (!sites.length) return;
+    try {
+      const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
+      const res = await fetch(`/api/contacted?names=${names}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("contacted fetch failed");
+      const json = (await res.json()) as Record<string, boolean>;
+      setContacted(json);
+    } catch {
+      setContacted({});
     }
-    loadContacted();
   }, [sites]);
 
-  const markAsContacted = useCallback(async (name: string, value: boolean) => {
-    setContacted((prev) => ({ ...prev, [name]: value }));
-    try {
-      const res = await fetch("/api/contacted", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ updates: [{ name, contacted: value }] }),
-      });
-      if (!res.ok) throw new Error("failed");
-    } catch {
-      setContacted((prev) => ({ ...prev, [name]: !value }));
-    }
-  }, []);
+  useEffect(() => {
+    loadContacted();
+  }, [loadContacted]);
+
+  const markAsContacted = useCallback(
+    async (name: string, value: boolean) => {
+      // Optimistic UI update
+      setContacted((prev) => ({ ...prev, [name]: value }));
+
+      try {
+        const res = await fetch("/api/contacted", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ updates: [{ name, contacted: value }] }),
+        });
+
+        if (!res.ok) throw new Error("failed");
+
+        // Re-fetch to ensure sync with KV store
+        await loadContacted();
+      } catch {
+        setContacted((prev) => ({ ...prev, [name]: !value }));
+      }
+    },
+    [loadContacted]
+  );
 
   const openCompose = useCallback((site: SiteData) => {
     setComposeTo({
@@ -443,7 +459,9 @@ export default function OutreachPage() {
 
                     <div className="mt-4 flex gap-3 flex-wrap">
                       <a
-                        href={`https://www.google.com/search?q=${encodeURIComponent(`${site.name} site:facebook.com`)}`}
+                        href={`https://www.google.com/search?q=${encodeURIComponent(
+                          `${site.name} site:facebook.com`
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
