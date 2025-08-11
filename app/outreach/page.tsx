@@ -38,9 +38,7 @@ function ScoreBadge({ label, value }: { label: string; value: PerfNumber }) {
   return (
     <span
       className={`px-3 py-1 rounded-full font-bold text-xs ${badgeColour(value)}`}
-      aria-label={`${label} performance ${
-        value === "N/A" ? "not available" : `${value} percent`
-      }`}
+      aria-label={`${label} performance ${value === "N/A" ? "not available" : `${value} percent`}`}
       title={`${label}: ${value === "N/A" ? "N/A" : `${value}%`}`}
     >
       {label} {value === "N/A" ? "N/A" : `${value}%`}
@@ -92,9 +90,8 @@ export default function OutreachPage() {
       fetchAbortRef.current = ctrl;
 
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(
-          query
-        )}${forceRefresh ? "&refresh=1" : ""}`;
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${forceRefresh ? "&refresh=1" : ""}`;
+        // Client uses no-store; server does the caching via KV
         const res = await fetch(url, {
           signal: ctrl.signal,
           cache: "no-store",
@@ -175,8 +172,7 @@ export default function OutreachPage() {
 
   const markAsContacted = useCallback(
     async (name: string, value: boolean) => {
-      // Optimistic UI update
-      setContacted((prev) => ({ ...prev, [name]: value }));
+      setContacted((prev) => ({ ...prev, [name]: value })); // optimistic
 
       try {
         const res = await fetch("/api/contacted", {
@@ -186,11 +182,9 @@ export default function OutreachPage() {
         });
 
         if (!res.ok) throw new Error("failed");
-
-        // Re-fetch to ensure sync with KV store
-        await loadContacted();
+        await loadContacted(); // reconcile with KV
       } catch {
-        setContacted((prev) => ({ ...prev, [name]: !value }));
+        setContacted((prev) => ({ ...prev, [name]: !value })); // rollback
       }
     },
     [loadContacted]
@@ -203,13 +197,11 @@ export default function OutreachPage() {
       business: site.name,
       website: site.url ?? undefined,
     });
-
     setComposeMsg(
       `I came across your business and noticed you may not currently have a website — or the existing one might be due a modern refresh.\n\n` +
         `At Legxcy Solutions, we design and develop high-performance, bespoke websites tailored to each business’s identity and aspirations.\n\n` +
         `If you're open to a brief chat, I'd be delighted to explore how we can strengthen your online presence.`
     );
-
     setComposeOpen(true);
   }, []);
 
@@ -218,6 +210,10 @@ export default function OutreachPage() {
       alert("Please add a recipient email.");
       return;
     }
+
+    // instant optimistic UI
+    markAsContacted(composeTo.name, true);
+
     try {
       setSending(true);
       const res = await fetch("/api/outreach", {
@@ -240,9 +236,10 @@ export default function OutreachPage() {
         business: composeTo.business || composeTo.name,
       });
 
-      await markAsContacted(composeTo.name, true);
       setComposeOpen(false);
     } catch (e) {
+      // rollback if send fails
+      markAsContacted(composeTo.name, false);
       alert((e as Error).message);
     } finally {
       setSending(false);
@@ -459,9 +456,7 @@ export default function OutreachPage() {
 
                     <div className="mt-4 flex gap-3 flex-wrap">
                       <a
-                        href={`https://www.google.com/search?q=${encodeURIComponent(
-                          `${site.name} site:facebook.com`
-                        )}`}
+                        href={`https://www.google.com/search?q=${encodeURIComponent(`${site.name} site:facebook.com`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
