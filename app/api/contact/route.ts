@@ -3,24 +3,33 @@ import { Resend } from "resend";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const limiter = new RateLimiterMemory({ points: 3, duration: 900 }); // 3 requests per 15 min
+const limiter = new RateLimiterMemory({ points: 3, duration: 900 }); // 3 req / 15 min
 
-// Simple sanitiser
+// Robust sanitizer for text contexts
 const sanitize = (str: string) =>
-  String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const xff = req.headers.get("x-forwarded-for");
+  const ip = xff ? xff.split(",")[0].trim() : "unknown";
 
-  let body;
+  let body: any;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, message, website, token } = body;
-  const firstName = sanitize(name).split(" ")[0];
+  const { name, email, message, website, token } = body ?? {};
+  const safeName = sanitize(name ?? "");
+  const safeEmail = sanitize(email ?? "");
+  const safeMessage = sanitize(message ?? "");
+  const firstName = safeName.split(/\s+/)[0] || "there";
 
   // Honeypot
   if (website) {
@@ -28,7 +37,7 @@ export async function POST(req: Request) {
   }
 
   // Required fields
-  if (!name || !email || !message || !token) {
+  if (!safeName || !safeEmail || !safeMessage || !token) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -38,12 +47,12 @@ export async function POST(req: Request) {
     {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${token}`,
+      body: `secret=${encodeURIComponent(process.env.TURNSTILE_SECRET_KEY || "")}&response=${encodeURIComponent(token)}`,
     }
   );
 
   const captchaData = await captchaRes.json();
-  if (!captchaData.success) {
+  if (!captchaData?.success) {
     return NextResponse.json(
       { error: "Failed captcha verification" },
       { status: 403 }
@@ -57,127 +66,154 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
+  // Common HTML parts
+  const PREHEADER_NOTIFY =
+    "New contact form submission received from your website.";
+  const PREHEADER_REPLY =
+    "We’ve received your message — here’s what happens next.";
+
+  const wrapperTop = (preheader: string) => `
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charSet="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Legxcy Solutions</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    /* Preheader hide */
+    .preheader { display:none!important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; overflow:hidden; mso-hide:all; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#0f2f23;">
+  <div class="preheader">${sanitize(preheader)}</div>
+  <table role="presentation" width="100%" cellPadding="0" cellSpacing="0" border="0" style="background-color:#0f2f23;">
+    <tr>
+      <td align="center" style="padding:16px;">
+        <table role="presentation" width="100%" cellPadding="0" cellSpacing="0" border="0" style="max-width:600px;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
+`;
+  const wrapperBottom = `
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const headerBlock = `
+<tr>
+  <td align="center" style="padding:16px 20px 10px 20px;">
+    <a href="https://legxcysol.dev" target="_blank" rel="noreferrer noopener" style="text-decoration:none;">
+      <img src="https://legxcysol.dev/logo.webp" width="120" height="120" alt="Legxcy Solutions logo"
+           style="display:block;max-width:120px;height:auto;margin:0 auto 10px auto;border:0;" />
+    </a>
+    <h2 style="color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;font-family:Inter,Arial,sans-serif;">
+      Legxcy Solutions
+    </h2>
+  </td>
+</tr>`;
+
+  const hr = `<tr><td style="padding:0 20px;"><hr style="border:none;border-top:1px solid #2d5440;margin:20px 0;" /></td></tr>`;
+
   try {
-    // 📩 Send notification to you
-    const data = await resend.emails.send({
+    // --- Owner notification ---
+    const notifyHtml = `
+${wrapperTop(PREHEADER_NOTIFY)}
+  ${headerBlock}
+  <tr>
+    <td style="padding:0 20px 10px 20px;">
+      <h3 style="color:#59ae6a;margin:0 0 10px 0;font-family:Inter,Arial,sans-serif;">New Contact Form Submission</h3>
+      <p style="margin:10px 0;font-size:16px;line-height:1.5;color:#e6e6e6;font-family:Inter,Arial,sans-serif;">
+        <strong style="color:#59ae6a;">Name:</strong><br/>${safeName}
+      </p>
+      <p style="margin:10px 0;font-size:16px;line-height:1.5;color:#e6e6e6;font-family:Inter,Arial,sans-serif;">
+        <strong style="color:#59ae6a;">Email:</strong><br/>${safeEmail}
+      </p>
+      <p style="margin:10px 0;font-size:16px;line-height:1.6;color:#e6e6e6;font-family:Inter,Arial,sans-serif;">
+        <strong style="color:#59ae6a;">Message:</strong><br/>
+        <span style="background:#0f2f23;display:block;padding:15px;border-radius:8px;color:#e6e6e6;white-space:pre-wrap;">
+${safeMessage}
+        </span>
+      </p>
+    </td>
+  </tr>
+  ${hr}
+  <tr>
+    <td style="padding:0 20px 20px 20px;text-align:center;color:#a3a3a3;font-size:14px;font-family:Inter,Arial,sans-serif;">
+      Sent via Legxcy Solutions Website
+    </td>
+  </tr>
+${wrapperBottom}
+`;
+
+    await resend.emails.send({
       from: `Legxcy Solutions <${process.env.RESEND_FROM_EMAIL!}>`,
       to: process.env.RESEND_TO_EMAIL!,
-      subject: `New Contact Form Submission from ${sanitize(name)} (${sanitize(email)})`,
-      replyTo: email,
-      text: `
-New contact form submission
-
-Name: ${sanitize(name)}
-Email: ${sanitize(email)}
-
-Message:
-${sanitize(message)}
-
-Sent via Legxcy Solutions Website
-      `,
-      html: `
-        <div style="background-color:#0f2f23;padding:15px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
-          <table width="100%" cellspacing="0" cellpadding="0" border="0" 
-                 style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
-            <tr>
-              <td style="text-align:center;padding:15px 20px 10px 20px;">
-                <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                     style="max-width:120px;height:auto;margin-bottom:10px;" />
-                <h2 style="color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;">
-                  New Contact Form Submission
-                </h2>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:20px;">
-                <p style="margin:10px 0;font-size:16px;line-height:1.5;">
-                  <strong style="color:#59ae6a;">Name:</strong><br/>
-                  ${sanitize(name)}
-                </p>
-                <p style="margin:10px 0;font-size:16px;line-height:1.5;">
-                  <strong style="color:#59ae6a;">Email:</strong><br/>
-                  ${sanitize(email)}
-                </p>
-                <p style="margin:10px 0;font-size:16px;line-height:1.6;">
-                  <strong style="color:#59ae6a;">Message:</strong><br/>
-                  <span style="background:#0f2f23;display:block;padding:15px;border-radius:8px;color:#e6e6e6;">
-                    ${sanitize(message)}
-                  </span>
-                </p>
-                <hr style="border:none;border-top:1px solid #2d5440;margin:20px 0;" />
-                <p style="font-size:14px;color:#a3a3a3;text-align:center;">
-                  Sent via Legxcy Solutions Website
-                </p>
-              </td>
-            </tr>
-          </table>
-        </div>
-      `,
+      subject: `New Contact Form: ${safeName} <${safeEmail}>`,
+      replyTo: safeEmail,
+      text: `New contact form submission\n\nName: ${safeName}\nEmail: ${safeEmail}\n\nMessage:\n${safeMessage}\n\nSent via Legxcy Solutions Website`,
+      html: notifyHtml,
+      headers: {
+        "Auto-Submitted": "auto-generated",
+      },
     });
 
-    // 📩 Send auto-reply to the user
+    // --- Auto-reply to user ---
+    const replyHtml = `
+${wrapperTop(PREHEADER_REPLY)}
+  ${headerBlock}
+  <tr>
+    <td style="padding:0 20px 10px 20px;">
+      <p style="font-size:16px;line-height:1.6;color:#e6e6e6;font-family:Inter,Arial,sans-serif;">Hi ${firstName},</p>
+      <p style="font-size:16px;line-height:1.6;color:#e6e6e6;font-family:Inter,Arial,sans-serif;">
+        Thank you for reaching out to <strong>Legxcy Solutions</strong>. We’ve received your message and will be in touch shortly.
+      </p>
+      <p style="font-size:16px;line-height:1.6;color:#e6e6e6;font-family:Inter,Arial,sans-serif;">
+        In the meantime, feel free to share your <strong>project goals</strong>, key <strong>features</strong>, and rough
+        <strong>page count</strong>. This helps us prepare a tailored proposal quickly.
+      </p>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="https://legxcysol.dev" target="_blank" rel="noreferrer noopener" style="text-decoration:none;">
+          <img src="https://legxcysol.dev/banner.webp" width="300" height="120" alt="Visit Legxcy Solutions"
+               style="display:inline-block;max-width:300px;height:auto;border-radius:6px;border:0;" />
+        </a>
+      </div>
+    </td>
+  </tr>
+  ${hr}
+  <tr>
+    <td style="padding:0 20px 20px 20px;text-align:center;color:#a3a3a3;font-size:13px;font-family:Inter,Arial,sans-serif;">
+      You’re receiving this because you contacted Legxcy Solutions.<br/>
+      If this wasn’t you, just ignore this email.
+    </td>
+  </tr>
+${wrapperBottom}
+`;
+
     await resend.emails.send({
       from: `Legxcy Solutions <${process.env.RESEND_FROM_EMAIL!}>`,
       to: email,
       subject: "Thanks for contacting Legxcy Solutions",
       replyTo: process.env.RESEND_TO_EMAIL!,
-      text: `
-          Hi ${firstName},
+      text: `Hi ${firstName},
 
-          Thank you for contacting Legxcy Solutions. We’ve successfully received your message and will be in touch with you shortly.
+Thank you for contacting Legxcy Solutions. We’ve received your message and will be in touch shortly.
 
-          In the meantime, we’d love to hear a little about your project goals, the features you have in mind, and roughly how many pages or sections you’d like. 
-          This will enable us to craft a tailored proposal aligned with your vision and ensure we can initiate your project efficiently and effectively.
+If you can, share your project goals, features, and rough page count so we can prepare a tailored proposal.
 
-          Best regards,
-          Legxcy Solutions`,
-      html: `
-                  <div style="background-color:#0f2f23;padding:15px;font-family:Inter,Arial,sans-serif;color:#ffffff;">
-                    <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                          style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
-                      <tr>
-                        <td style="text-align:center;padding:15px 20px 10px 20px;">
-                          <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                              style="max-width:120px;height:auto;margin-bottom:10px;" />
-                          <h2 style="text-align:center;color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;">
-                            Thank You for Getting in Touch
-                          </h2>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:20px;">
-                          <p style="font-size:16px;line-height:1.6;">Hi ${firstName},</p>
-                          <p style="font-size:16px;line-height:1.6;">
-                            Thank you for reaching out to <strong>Legxcy Solutions</strong>. 
-                            We have successfully received your message and will be in touch with you shortly.
-                          </p>
-                          <p style="font-size:16px;line-height:1.6;">
-                            In the meantime, we’d love to hear a little about your <strong>project goals</strong>, 
-                            the <strong>features you have in mind</strong>, and roughly <strong>how many pages or sections
-                            </strong> you’d like. This will enable us to craft a tailored proposal aligned with your vision 
-                            and ensure we can initiate your project efficiently and effectively.
-                          </p>
-                          <table width="100%" style="margin-top:30px;text-align:center;">
-                            <tr>
-                              <td>
-                                <p style="font-size:14px;color:#a3a3a3;margin-bottom:10px;">
-                                  Best regards,
-                                </p>
-                                <a href="https://legxcysol.dev" target="_blank" style="text-decoration:none;">
-                                  <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner"
-                                      style="max-width:150px;height:auto;border-radius:6px;" />
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-                  </div>
-                `,
+Best regards,
+Legxcy Solutions
+https://legxcysol.dev`,
+      html: replyHtml,
+      headers: {
+        "Auto-Submitted": "auto-replied",
+      },
     });
 
     return NextResponse.json({
       success: true,
       message: "Thanks for reaching out! We’ll get back to you shortly.",
-      data,
     });
   } catch (err) {
     console.error("Email send failed:", err);
