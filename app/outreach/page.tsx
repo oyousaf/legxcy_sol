@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSyncAlt, FaFacebook, FaGoogle } from "react-icons/fa";
+import Modal from "./Modal";
 
 type SiteData = {
   name: string;
@@ -10,12 +11,7 @@ type SiteData = {
   phone?: string | null;
   hasWebsite: boolean;
   profileLink?: string | null;
-  performanceScore:
-    | {
-        mobile: number | "N/A";
-        desktop: number | "N/A";
-      }
-    | "N/A";
+  performanceScore: { mobile: number | "N/A"; desktop: number | "N/A" } | "N/A";
   priorityScore: number;
 };
 
@@ -36,11 +32,24 @@ export default function OutreachPage() {
   >("all");
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
+  // Modal state
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState<{
+    email: string;
+    name: string;
+    business?: string;
+    website?: string;
+  } | null>(null);
+  const [composeMsg, setComposeMsg] = useState("");
+  const [sending, setSending] = useState(false);
+
   const fetchData = useCallback(
     async (forceRefresh = false) => {
       setLoading(true);
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}${forceRefresh ? "&refresh=1" : ""}`;
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${
+          forceRefresh ? "&refresh=1" : ""
+        }`;
         const res = await fetch(url);
         const data: SiteData[] = await res.json();
         if (!Array.isArray(data)) return setSites([]);
@@ -67,7 +76,7 @@ export default function OutreachPage() {
 
   useEffect(() => {
     async function loadContacted() {
-      if (sites.length === 0) return;
+      if (!sites.length) return;
       try {
         const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
         const res = await fetch(`/api/contacted?names=${names}`);
@@ -93,6 +102,86 @@ export default function OutreachPage() {
     }
   };
 
+  const openCompose = (site: SiteData) => {
+    setComposeTo({
+      email: "",
+      name: site.name,
+      business: site.name,
+      website: site.url ?? undefined,
+    });
+
+    setComposeMsg(
+      `Good afternoon ${site.name},\n\n` +
+        `I trust this finds you well.\n\n` +
+        `I came across your business and noticed you may not currently have a website — or the existing one might be due a modern refresh. ` +
+        `In today's digital climate, your online presence often shapes a customer’s first impression.\n\n` +
+        `I run a small web studio called Legxcy Solutions, where we design and develop high-performance, bespoke websites tailored to each business’s identity and aspirations. ` +
+        `You can browse examples of our recent work here: https://legxcysol.dev\n\n` +
+        `If you're open to a brief conversation, I’d be delighted to explore how we might strengthen and elevate your online presence in a way that genuinely reflects your brand.\n\n` +
+        `Best Regards,\nLegxcy Solutions`
+    );
+
+    setComposeOpen(true);
+  };
+
+  const sendOutreach = async () => {
+    if (!composeTo?.email) {
+      alert("Please add a recipient email.");
+      return;
+    }
+
+    try {
+      setSending(true);
+
+      const logoUrl = "https://legxcysol.dev/logo.webp";
+      const bannerUrl = "https://legxcysol.dev/banner.webp";
+
+      const htmlMessage = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #222;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${logoUrl}" alt="Legxcy Solutions Logo" style="max-height: 60px;" />
+          </div>
+          ${composeMsg
+            .split("\n")
+            .map((line) => `<p>${line || "&nbsp;"}</p>`)
+            .join("")}
+          <div style="text-align: center; margin-top: 20px;">
+            <img src="${bannerUrl}" alt="Legxcy Solutions Banner" style="max-height: 80px;" />
+          </div>
+        </div>
+      `;
+
+      const res = await fetch("/api/outreach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: composeTo.email,
+          name: composeTo.name,
+          business: composeTo.business,
+          website: composeTo.website,
+          message: htmlMessage,
+        }),
+      });
+
+      const j = await res.json();
+      if (!res.ok) throw new Error(j?.error || "Send failed");
+
+      if (typeof window !== "undefined" && (window as any).gtag) {
+        (window as any).gtag("event", "outreach_email_sent", {
+          recipient_domain: composeTo.email.split("@").pop(),
+          business: composeTo.business || composeTo.name,
+        });
+      }
+
+      await markAsContacted(composeTo.name, true);
+      setComposeOpen(false);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setSending(false);
+    }
+  };
+
   const getPerfBadgeColor = (score: number | "N/A") => {
     if (score === "N/A") return "bg-gray-600";
     if (score >= 90) return "bg-green-600";
@@ -114,241 +203,248 @@ export default function OutreachPage() {
 
   return (
     <main className="flex flex-col items-center justify-center px-6 py-12 bg-[var(--mossy-bg)] min-h-screen">
+      {/* HEADER */}
       <div className="w-full max-w-5xl text-center">
         <motion.h1
           className="text-4xl font-bold mb-4 text-white"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
         >
           🍉 Outreach Dashboard
         </motion.h1>
-
         {lastUpdated && (
-          <motion.p
-            key={lastUpdated}
-            className="text-sm text-gray-400 mb-6"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-          >
+          <motion.p className="text-sm text-gray-400 mb-6">
             Last updated: {lastUpdated}
           </motion.p>
         )}
-
         <div className="mb-6 text-md text-white/90">
           🚫 <strong>{noWebsiteCount}</strong> with no website | ✅{" "}
           <strong>{contactedCount}</strong> contacted
         </div>
+      </div>
 
-        <motion.div
-          className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-stretch gap-3 md:gap-4 mb-10 border"
-          style={{
-            backgroundColor: "var(--mossy-bg)",
-            borderColor: "var(--accent-green)",
+      {/* SEARCH/FILTER PANEL */}
+      <motion.div
+        className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-stretch gap-3 md:gap-4 mb-10 border"
+        style={{
+          backgroundColor: "var(--mossy-bg)",
+          borderColor: "var(--accent-green)",
+        }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setQuery(inputQuery);
           }}
-          initial={{ opacity: 0, y: -15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          className="flex flex-col sm:flex-row w-full md:w-auto gap-2"
         >
-          {/* Search Form */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setQuery(inputQuery);
-            }}
-            className="flex flex-col sm:flex-row w-full md:w-auto gap-2"
-          >
-            <input
-              type="text"
-              value={inputQuery}
-              onChange={(e) => setInputQuery(e.target.value)}
-              placeholder="Search businesses..."
-              className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-200 focus:outline-none focus:ring-2 w-full sm:w-64"
-              style={{
-                backgroundColor: "var(--dark-mint)",
-                borderColor: "var(--accent-green)",
-                borderWidth: "1px",
-              }}
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg font-semibold shadow-md w-full sm:w-auto text-white"
-              style={{
-                backgroundColor: "var(--accent-green)",
-                transition: "background-color 0.2s ease-in-out",
-              }}
-            >
-              🔍 Search
-            </button>
-          </form>
-
-          {/* Filter */}
-          <select
-            value={filterBy}
-            onChange={(e) =>
-              setFilterBy(
-                e.target.value as
-                  | "all"
-                  | "noWebsite"
-                  | "contacted"
-                  | "notContacted"
-              )
-            }
-            className="px-4 py-2 rounded-lg text-white w-full sm:w-56 text-center"
+          <input
+            type="text"
+            value={inputQuery}
+            onChange={(e) => setInputQuery(e.target.value)}
+            placeholder="Search businesses..."
+            className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-200 focus:outline-none focus:ring-2 w-full sm:w-64"
             style={{
               backgroundColor: "var(--dark-mint)",
               borderColor: "var(--accent-green)",
               borderWidth: "1px",
             }}
-          >
-            <option value="all">Show All</option>
-            <option value="noWebsite">No Website Only</option>
-            <option value="contacted">Contacted</option>
-            <option value="notContacted">Not Contacted</option>
-          </select>
-
+          />
           <button
-            onClick={() => fetchData(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-md text-white w-full sm:w-auto"
+            type="submit"
+            className="px-4 py-2 rounded-lg font-semibold shadow-md text-white"
             style={{ backgroundColor: "var(--accent-green)" }}
           >
-            <FaSyncAlt className={loading ? "animate-spin" : ""} /> Refresh
+            🔍 Search
           </button>
-        </motion.div>
+        </form>
 
-        {/* List */}
-        {filteredSites.length === 0 ? (
-          <p className="text-xl text-gray-400 italic">
-            No businesses match your filters.
-          </p>
-        ) : (
-          <motion.ul
-            layout
-            className="space-y-6"
-            initial={false}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            style={{ minHeight: "900px" }}
-          >
-            <AnimatePresence initial={false}>
-              {filteredSites.map((site, i) => (
-                <motion.li
-                  key={site.name}
-                  layout
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.35, delay: i * 0.03 }}
-                  className="p-6 rounded-xl shadow-lg text-left border"
-                  style={{
-                    backgroundColor: "var(--dark-mint)",
-                    borderColor: "var(--accent-green)",
-                  }}
-                >
-                  <div className="flex justify-between items-start flex-col md:flex-row">
-                    <div>
-                      <h2 className="text-2xl font-semibold text-white">
-                        {site.name}
-                      </h2>
-                      <div className="text-gray-300 mt-2 space-y-1">
-                        {site.phone && <p>📞 {site.phone}</p>}
-                        {site.url && (
-                          <p>
-                            🌐{" "}
-                            <a
-                              href={site.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="underline"
-                              style={{ color: "var(--accent-green)" }}
+        <select
+          value={filterBy}
+          onChange={(e) => setFilterBy(e.target.value as any)}
+          className="px-4 py-2 rounded-lg text-white w-full sm:w-56 text-center"
+          style={{
+            backgroundColor: "var(--dark-mint)",
+            borderColor: "var(--accent-green)",
+            borderWidth: "1px",
+          }}
+        >
+          <option value="all">Show All</option>
+          <option value="noWebsite">No Website Only</option>
+          <option value="contacted">Contacted</option>
+          <option value="notContacted">Not Contacted</option>
+        </select>
+
+        <motion.button
+          onClick={() => fetchData(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-md text-white"
+          style={{ backgroundColor: "var(--accent-green)" }}
+          whileTap={{ scale: 0.95 }}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 0.4 }}
+        >
+          <FaSyncAlt className={loading ? "animate-spin" : ""} /> Refresh
+        </motion.button>
+      </motion.div>
+
+      {/* BUSINESS LIST */}
+      <div className="w-full max-w-3xl">
+        <AnimatePresence mode="wait">
+          {filteredSites.length === 0 ? (
+            <motion.p
+              key="no-results"
+              className="text-xl text-gray-400 italic text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              No businesses match your filters.
+            </motion.p>
+          ) : (
+            <motion.ul
+              layout
+              className="grid grid-cols-1 gap-6 w-full"
+              style={{ scrollbarGutter: "stable" }}
+            >
+              <AnimatePresence initial={false}>
+                {filteredSites.map((site, i) => (
+                  <motion.li
+                    key={site.name}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="p-6 rounded-xl shadow-lg text-left border"
+                    style={{
+                      backgroundColor: "var(--dark-mint)",
+                      borderColor: "var(--accent-green)",
+                    }}
+                  >
+                    {/* Card Content */}
+                    <div className="flex justify-between items-start flex-col md:flex-row">
+                      <div>
+                        <h2 className="text-2xl font-semibold text-white">
+                          {site.name}
+                        </h2>
+                        <div className="text-gray-300 mt-2 space-y-1">
+                          {site.phone && <p>📞 {site.phone}</p>}
+                          {site.url && (
+                            <p>
+                              🌐{" "}
+                              <a
+                                href={site.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline"
+                                style={{ color: "var(--accent-green)" }}
+                              >
+                                Visit Website
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
+                        {site.performanceScore !== "N/A" &&
+                        typeof site.performanceScore === "object" ? (
+                          <div className="flex gap-2">
+                            <span
+                              className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(
+                                site.performanceScore.mobile
+                              )}`}
                             >
-                              Visit Website
-                            </a>
-                          </p>
+                              📱 {site.performanceScore.mobile}%
+                            </span>
+                            <span
+                              className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(
+                                site.performanceScore.desktop
+                              )}`}
+                            >
+                              🖥️ {site.performanceScore.desktop}%
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full font-bold bg-gray-600 text-xs">
+                            No Score
+                          </span>
+                        )}
+
+                        <span className="px-3 py-1 rounded-full font-bold bg-purple-600">
+                          Priority: {site.priorityScore}
+                        </span>
+
+                        {!contacted[site.name] ? (
+                          <div className="flex gap-2 mt-2">
+                            <motion.button
+                              onClick={() => openCompose(site)}
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm"
+                            >
+                              ✉️ Send Outreach
+                            </motion.button>
+                            <motion.button
+                              onClick={() => markAsContacted(site.name, true)}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                            >
+                              📬 Mark Contacted
+                            </motion.button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 mt-2">
+                            <span className="px-3 py-1 bg-green-600 rounded text-sm">
+                              ✅ Contacted
+                            </span>
+                            <button
+                              onClick={() => markAsContacted(site.name, false)}
+                              className="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-xs"
+                            >
+                              Undo
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
-                      {site.performanceScore !== "N/A" &&
-                      typeof site.performanceScore === "object" ? (
-                        <div className="flex gap-2">
-                          <span
-                            className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(site.performanceScore.mobile)}`}
-                          >
-                            📱 {site.performanceScore.mobile}%
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full font-bold text-xs ${getPerfBadgeColor(site.performanceScore.desktop)}`}
-                          >
-                            🖥️ {site.performanceScore.desktop}%
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="px-3 py-1 rounded-full font-bold bg-gray-600 text-xs">
-                          No Score
-                        </span>
-                      )}
-
-                      <span className="px-3 py-1 rounded-full font-bold bg-purple-600">
-                        Priority: {site.priorityScore}
-                      </span>
-
-                      {!contacted[site.name] ? (
-                        <motion.button
-                          onClick={() => markAsContacted(site.name, true)}
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm mt-2"
-                        >
-                          📬 Mark Contacted
-                        </motion.button>
-                      ) : (
-                        <div className="flex gap-2 mt-2">
-                          <span className="px-3 py-1 bg-green-600 rounded text-sm">
-                            ✅ Contacted
-                          </span>
-                          <button
-                            onClick={() => markAsContacted(site.name, false)}
-                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-xs"
-                          >
-                            Undo
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <motion.div
-                    className="mt-4 flex gap-3 flex-wrap"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(`${site.name} site:facebook.com`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      <FaFacebook />
-                    </a>
-
-                    <a
-                      href={site.profileLink || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
-                    >
-                      <FaGoogle />
-                    </a>
-                  </motion.div>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </motion.ul>
-        )}
+                    <motion.div className="mt-4 flex gap-3 flex-wrap">
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(
+                          `${site.name} site:facebook.com`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        <FaFacebook />
+                      </a>
+                      <a
+                        href={site.profileLink || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
+                      >
+                        <FaGoogle />
+                      </a>
+                    </motion.div>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* COMPOSE MODAL */}
+      <Modal
+        open={composeOpen}
+        to={composeTo}
+        message={composeMsg}
+        sending={sending}
+        setTo={setComposeTo}
+        setMessage={setComposeMsg}
+        onClose={() => setComposeOpen(false)}
+        onSend={sendOutreach}
+      />
     </main>
   );
 }
