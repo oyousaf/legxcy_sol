@@ -28,7 +28,7 @@ interface PageSpeedResponse {
 }
 type PerfNum = number | "N/A";
 type BusinessEntry = {
-  id: string; // 🔑 include place_id
+  id: string;
   name: string;
   url: string | null;
   phone: string | null;
