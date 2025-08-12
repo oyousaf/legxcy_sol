@@ -37,6 +37,14 @@ type ComposeTo = {
 
 type ContactedMap = Record<string, boolean>;
 
+interface AnalyticsWindow extends Window {
+  gtag?: (
+    cmd: "event",
+    eventName: string,
+    params?: Record<string, unknown>
+  ) => void;
+}
+
 /* ───────── Utilities ───────── */
 
 const badgeColour = (score: PerfNumber) => {
@@ -100,9 +108,9 @@ function coerceSites(input: unknown): SiteData[] {
 
       let performanceScore: PerformanceScore = "N/A";
       const ps = obj.performanceScore as unknown;
-      if (ps && typeof ps === "object" && ps !== null) {
+      if (ps && typeof ps === "object") {
         const pso = ps as Record<string, unknown>;
-        const mobile =
+        const mobile: PerfNumber =
           pso.mobile === "N/A"
             ? "N/A"
             : typeof pso.mobile === "number"
@@ -111,7 +119,7 @@ function coerceSites(input: unknown): SiteData[] {
                   !Number.isNaN(Number(pso.mobile))
                 ? Number(pso.mobile)
                 : "N/A";
-        const desktop =
+        const desktop: PerfNumber =
           pso.desktop === "N/A"
             ? "N/A"
             : typeof pso.desktop === "number"
@@ -172,23 +180,20 @@ export default function OutreachPage() {
     async (forceRefresh = false) => {
       setLoading(true);
 
-      // abort in-flight request (tab switchers of the world, rejoice)
       fetchAbortRef.current?.abort();
       const ctrl = new AbortController();
       fetchAbortRef.current = ctrl;
 
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}${
-          forceRefresh ? "&refresh=1" : ""
-        }`;
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${forceRefresh ? "&refresh=1" : ""}`;
 
         const res = await fetch(url, {
           signal: ctrl.signal,
           cache: "no-store", // client never caches; server controls via KV
         });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-        const json = (await res.json()) as unknown;
 
+        const json = (await res.json()) as unknown;
         const safe = coerceSites(json);
         setSites(safe);
         setLastUpdated(new Date().toLocaleString());
@@ -307,16 +312,16 @@ export default function OutreachPage() {
         throw new Error(msg);
       }
 
-      // Analytics (optional, safe guard)
+      // Analytics (optional)
       if (typeof window !== "undefined") {
-        const recipientDomain = composeTo.email.split("@").pop();
-        (window as any).gtag?.("event", "outreach_email_sent", {
+        const w = window as AnalyticsWindow;
+        const recipientDomain = composeTo.email.split("@").pop() ?? "";
+        w.gtag?.("event", "outreach_email_sent", {
           recipient_domain: recipientDomain,
           business: composeTo.business || composeTo.name,
         });
       }
 
-      // Outreach route writes KV; we only need to reconcile
       await loadContacted();
       setComposeOpen(false);
     } catch (e) {
@@ -449,14 +454,14 @@ export default function OutreachPage() {
               style={{ scrollbarGutter: "stable" }}
             >
               <AnimatePresence initial={false}>
-                {filteredSites.map((site, i) => (
+                {filteredSites.map((site) => (
                   <motion.li
                     key={site.name}
                     layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: 0.05 }}
                     className="p-6 rounded-xl shadow-lg text-left border bg-[var(--dark-mint)] border-[var(--accent-green)]/70"
                   >
                     <div className="flex justify-between items-start flex-col md:flex-row gap-4">
