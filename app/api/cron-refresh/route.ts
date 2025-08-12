@@ -4,6 +4,8 @@ const QUERIES = [
   "businesses in Ossett",
   "opticians in Wakefield",
   "businesses in Wakefield",
+  "electricians in Wakefield",
+  "used cars in Wakefield"
 ];
 
 export const dynamic = "force-dynamic";
