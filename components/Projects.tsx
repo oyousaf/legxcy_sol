@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, Variants } from "framer-motion";
+import { FaEye } from "react-icons/fa";
 
 // Projects data
 const projects = [
@@ -50,6 +51,21 @@ const cardVariants: Variants = {
     y: 0,
     transition: { delay: i * 0.15, duration: 0.5, ease: "easeOut" },
   }),
+};
+
+// Idle pulse animation for FaEye
+const pulseVariants: Variants = {
+  idle: {
+    scale: [1, 1.05, 1],
+    opacity: [0.85, 1, 0.85],
+    transition: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+  },
+  hover: {
+    scale: 1.2,
+    opacity: 1,
+    textShadow: "0px 0px 8px rgba(255,255,255,0.8)",
+    transition: { type: "spring", stiffness: 200, damping: 12 },
+  },
 };
 
 export default function Projects() {
@@ -121,22 +137,30 @@ export default function Projects() {
               </div>
 
               {/* Project details */}
-              <div className="p-6 text-left">
+              <div className="p-6 flex flex-col items-center text-center">
                 <h3 className="text-xl font-semibold text-white mb-2">
                   {p.name}
                 </h3>
-                <p className="text-[var(--foreground)] mb-4 text-sm sm:text-base">
+                <p className="text-[var(--foreground)] mb-4 text-sm sm:text-base max-w-xs">
                   {p.desc}
                 </p>
                 {p.link && (
-                  <a
+                  <motion.a
                     href={p.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-[var(--accent-green)] inline-flex items-center gap-1 hover:gap-2 transition-all"
+                    className="text-2xl sm:text-3xl text-[var(--accent-green)] hover:text-white flex items-center justify-center"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 250, damping: 18 }}
                   >
-                    View Project →
-                  </a>
+                    <motion.span
+                      variants={pulseVariants}
+                      initial="idle"
+                      whileHover="hover"
+                    >
+                      <FaEye />
+                    </motion.span>
+                  </motion.a>
                 )}
               </div>
             </motion.div>
