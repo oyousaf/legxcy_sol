@@ -233,7 +233,9 @@ export default function OutreachPage() {
   const loadContacted = useCallback(async () => {
     if (!sites.length) return;
     try {
-      const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
+      const names = sites
+        .map((s) => encodeURIComponent(s.id || s.name))
+        .join(",");
       const res = await fetch(`/api/contacted?names=${names}`, {
         cache: "no-store",
       });
@@ -251,18 +253,18 @@ export default function OutreachPage() {
 
   /** Button path: optimistic → POST → reconcile */
   const markAsContacted = useCallback(
-    async (name: string, value: boolean) => {
-      setContacted((prev) => ({ ...prev, [name]: value }));
+    async (key: string, value: boolean) => {
+      setContacted((prev) => ({ ...prev, [key]: value }));
       try {
         const res = await fetch("/api/contacted", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ updates: [{ name, contacted: value }] }),
+          body: JSON.stringify({ updates: [{ name: key, contacted: value }] }),
         });
         if (!res.ok) throw new Error("failed");
         await loadContacted();
       } catch {
-        setContacted((prev) => ({ ...prev, [name]: !value }));
+        setContacted((prev) => ({ ...prev, [key]: !value }));
       }
     },
     [loadContacted]
@@ -461,117 +463,125 @@ export default function OutreachPage() {
               style={{ scrollbarGutter: "stable" }}
             >
               <AnimatePresence initial={false}>
-                {filteredSites.map((site) => (
-                  <motion.li
-                    key={site.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ delay: 0.05 }}
-                    className="p-6 rounded-xl shadow-lg text-left border bg-[var(--dark-mint)] border-[var(--accent-green)]/70"
-                  >
-                    <div className="flex justify-between items-start flex-col md:flex-row gap-4">
-                      <div>
-                        <h2 className="text-2xl font-semibold text-white">
-                          {site.name}
-                        </h2>
-                        <div className="text-gray-300 mt-2 space-y-1">
-                          {site.phone && <p>📞 {site.phone}</p>}
-                          {site.url && (
-                            <p>
-                              🌐{" "}
-                              <a
-                                href={site.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline underline-offset-2 hover:opacity-90 text-[var(--accent-green)]"
+                {filteredSites.map((site) => {
+                  const contactKey = site.id || site.name;
+
+                  return (
+                    <motion.li
+                      key={contactKey}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ delay: 0.05 }}
+                      className="p-6 rounded-xl shadow-lg text-left border bg-[var(--dark-mint)] border-[var(--accent-green)]/70"
+                    >
+                      <div className="flex justify-between items-start flex-col md:flex-row gap-4">
+                        <div>
+                          <h2 className="text-2xl font-semibold text-white">
+                            {site.name}
+                          </h2>
+                          <div className="text-gray-300 mt-2 space-y-1">
+                            {site.phone && <p>📞 {site.phone}</p>}
+                            {site.url && (
+                              <p>
+                                🌐{" "}
+                                <a
+                                  href={site.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline underline-offset-2 hover:opacity-90 text-[var(--accent-green)]"
+                                >
+                                  Visit Website
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-start md:items-end gap-2">
+                          {site.performanceScore !== "N/A" &&
+                          typeof site.performanceScore === "object" ? (
+                            <div className="flex gap-2">
+                              <ScoreBadge
+                                label="📱"
+                                value={site.performanceScore.mobile}
+                              />
+                              <ScoreBadge
+                                label="🖥️"
+                                value={site.performanceScore.desktop}
+                              />
+                            </div>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full font-bold bg-gray-600 text-xs">
+                              No Score
+                            </span>
+                          )}
+
+                          <span className="px-3 py-1 rounded-full font-bold bg-purple-600">
+                            Priority: {site.priorityScore}
+                          </span>
+
+                          {!contacted[contactKey] ? (
+                            <div className="flex gap-2 mt-1">
+                              <motion.button
+                                onClick={() => openCompose(site)}
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm"
                               >
-                                Visit Website
-                              </a>
-                            </p>
+                                ✉️ Send Outreach
+                              </motion.button>
+                              <motion.button
+                                onClick={() =>
+                                  markAsContacted(contactKey, true)
+                                }
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                              >
+                                📬 Mark Contacted
+                              </motion.button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2 mt-1">
+                              <span className="px-3 py-1 bg-green-600 rounded text-sm">
+                                ✅ Contacted
+                              </span>
+                              <button
+                                onClick={() =>
+                                  markAsContacted(contactKey, false)
+                                }
+                                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-xs"
+                              >
+                                Undo
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-start md:items-end gap-2">
-                        {site.performanceScore !== "N/A" &&
-                        typeof site.performanceScore === "object" ? (
-                          <div className="flex gap-2">
-                            <ScoreBadge
-                              label="📱"
-                              value={site.performanceScore.mobile}
-                            />
-                            <ScoreBadge
-                              label="🖥️"
-                              value={site.performanceScore.desktop}
-                            />
-                          </div>
-                        ) : (
-                          <span className="px-3 py-1 rounded-full font-bold bg-gray-600 text-xs">
-                            No Score
-                          </span>
-                        )}
-
-                        <span className="px-3 py-1 rounded-full font-bold bg-purple-600">
-                          Priority: {site.priorityScore}
-                        </span>
-
-                        {!contacted[site.name] ? (
-                          <div className="flex gap-2 mt-1">
-                            <motion.button
-                              onClick={() => openCompose(site)}
-                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm"
-                            >
-                              ✉️ Send Outreach
-                            </motion.button>
-                            <motion.button
-                              onClick={() => markAsContacted(site.name, true)}
-                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                            >
-                              📬 Mark Contacted
-                            </motion.button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2 mt-1">
-                            <span className="px-3 py-1 bg-green-600 rounded text-sm">
-                              ✅ Contacted
-                            </span>
-                            <button
-                              onClick={() => markAsContacted(site.name, false)}
-                              className="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-xs"
-                            >
-                              Undo
-                            </button>
-                          </div>
-                        )}
+                      <div className="mt-4 flex gap-3 flex-wrap">
+                        <a
+                          href={`https://www.google.com/search?q=${encodeURIComponent(
+                            `${site.name} site:facebook.com`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
+                          aria-label="Search Facebook"
+                        >
+                          <FaFacebook />
+                        </a>
+                        <a
+                          href={site.profileLink || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
+                          aria-label="Open Google profile"
+                        >
+                          <FaGoogle />
+                        </a>
                       </div>
-                    </div>
-
-                    <div className="mt-4 flex gap-3 flex-wrap">
-                      <a
-                        href={`https://www.google.com/search?q=${encodeURIComponent(
-                          `${site.name} site:facebook.com`
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
-                        aria-label="Search Facebook"
-                      >
-                        <FaFacebook />
-                      </a>
-                      <a
-                        href={site.profileLink || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-red-600 hover:bg-red-700"
-                        aria-label="Open Google profile"
-                      >
-                        <FaGoogle />
-                      </a>
-                    </div>
-                  </motion.li>
-                ))}
+                    </motion.li>
+                  );
+                })}
               </AnimatePresence>
             </motion.ul>
           )}
