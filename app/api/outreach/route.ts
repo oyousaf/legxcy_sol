@@ -126,7 +126,6 @@ async function fetchJsonWithRetry<T>(
 ): Promise<T> {
   let attempt = 0;
   const waits = [0, 500, 1500];
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       return await factory();
@@ -167,7 +166,7 @@ async function getPageSpeedScore(
       kv.get<PerfNum>(`ps:v1:desktop:${host}`),
     ]);
 
-    // Only return cached if BOTH are present (avoids half-cached oscillation)
+    // Only return cached if BOTH are present
     if (cM !== null && cD !== null) {
       return { mobile: cM as PerfNum, desktop: cD as PerfNum };
     }
@@ -206,10 +205,9 @@ async function getPageSpeedScore(
   }
 }
 
-/* dev-only logs shown in VS Code, not in production/log drains */
+/* dev-only logs */
 function devLog(...args: unknown[]) {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.warn(...args);
   }
 }

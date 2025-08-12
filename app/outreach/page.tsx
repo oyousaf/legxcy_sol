@@ -189,7 +189,7 @@ export default function OutreachPage() {
 
         const res = await fetch(url, {
           signal: ctrl.signal,
-          cache: "no-store", // client never caches; server controls via KV
+          cache: "no-store",
         });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
 
@@ -244,7 +244,7 @@ export default function OutreachPage() {
   /** Button path: optimistic → POST → reconcile */
   const markAsContacted = useCallback(
     async (name: string, value: boolean) => {
-      setContacted((prev) => ({ ...prev, [name]: value })); // local optimistic
+      setContacted((prev) => ({ ...prev, [name]: value }));
       try {
         const res = await fetch("/api/contacted", {
           method: "POST",
@@ -252,9 +252,9 @@ export default function OutreachPage() {
           body: JSON.stringify({ updates: [{ name, contacted: value }] }),
         });
         if (!res.ok) throw new Error("failed");
-        await loadContacted(); // reconcile KV truth
+        await loadContacted();
       } catch {
-        setContacted((prev) => ({ ...prev, [name]: !value })); // rollback
+        setContacted((prev) => ({ ...prev, [name]: !value }));
       }
     },
     [loadContacted]
@@ -325,7 +325,6 @@ export default function OutreachPage() {
       await loadContacted();
       setComposeOpen(false);
     } catch (e) {
-      // rollback if send failed
       setContacted((prev) => ({ ...prev, [composeTo.name]: false }));
       alert((e as Error).message);
     } finally {
