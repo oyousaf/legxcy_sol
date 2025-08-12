@@ -17,7 +17,7 @@ type PerfNumber = number | "N/A";
 type PerformanceScore = { mobile: PerfNumber; desktop: PerfNumber } | "N/A";
 
 type SiteData = {
-  id: string; // 🔑 unique (place_id)
+  id: string;
   name: string;
   url: string | null;
   phone?: string | null;
@@ -91,9 +91,7 @@ function coerceSites(input: unknown): SiteData[] {
       const obj = d as Record<string, unknown>;
 
       const id =
-        typeof obj.id === "string" && obj.id.trim().length > 0
-          ? obj.id
-          : null;
+        typeof obj.id === "string" && obj.id.trim().length > 0 ? obj.id : null;
       if (!id) return null;
 
       const name = typeof obj.name === "string" ? obj.name : "";
@@ -123,7 +121,7 @@ function coerceSites(input: unknown): SiteData[] {
             : typeof pso.mobile === "number"
               ? pso.mobile
               : typeof pso.mobile === "string" &&
-                !Number.isNaN(Number(pso.mobile))
+                  !Number.isNaN(Number(pso.mobile))
                 ? Number(pso.mobile)
                 : "N/A";
         const desktop: PerfNumber =
@@ -132,7 +130,7 @@ function coerceSites(input: unknown): SiteData[] {
             : typeof pso.desktop === "number"
               ? pso.desktop
               : typeof pso.desktop === "string" &&
-                !Number.isNaN(Number(pso.desktop))
+                  !Number.isNaN(Number(pso.desktop))
                 ? Number(pso.desktop)
                 : "N/A";
         performanceScore = { mobile, desktop };
@@ -142,7 +140,7 @@ function coerceSites(input: unknown): SiteData[] {
         typeof obj.priorityScore === "number"
           ? obj.priorityScore
           : typeof obj.priorityScore === "string" &&
-            !Number.isNaN(Number(obj.priorityScore))
+              !Number.isNaN(Number(obj.priorityScore))
             ? Number(obj.priorityScore)
             : 0;
 
@@ -314,7 +312,9 @@ export default function OutreachPage() {
       const j = (await res.json()) as unknown;
       if (!res.ok) {
         const msg =
-          j && typeof j === "object" && "error" in (j as Record<string, unknown>)
+          j &&
+          typeof j === "object" &&
+          "error" in (j as Record<string, unknown>)
             ? String((j as Record<string, unknown>).error)
             : "Send failed";
         throw new Error(msg);

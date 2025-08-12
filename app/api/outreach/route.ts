@@ -293,7 +293,7 @@ export async function GET(req: Request) {
         const mobileScore = performanceScore.mobile;
 
         return {
-          id: place.place_id, // 🔑 send unique id to the client
+          id: place.place_id,
           name: place.name,
           url: normUrl,
           phone,
