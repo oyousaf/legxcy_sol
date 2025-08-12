@@ -94,7 +94,7 @@ function coerceSites(input: unknown): SiteData[] {
         typeof obj.id === "string" && obj.id.trim().length > 0
           ? obj.id
           : null;
-      if (!id) return null; // require a real id
+      if (!id) return null;
 
       const name = typeof obj.name === "string" ? obj.name : "";
       const url =
@@ -235,7 +235,6 @@ export default function OutreachPage() {
   const loadContacted = useCallback(async () => {
     if (!sites.length) return;
     try {
-      // still keyed by name to match your /api/contacted
       const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
       const res = await fetch(`/api/contacted?names=${names}`, {
         cache: "no-store",

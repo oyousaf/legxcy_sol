@@ -419,7 +419,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Write contacted flags (so reconciliation shows “Contacted” after send)
+    // Write contacted flags
     const writes: Promise<unknown>[] = [
       kv.set(`contacted:${name}`, true, { ex: SEVEN_DAYS }), // legacy
       kv.set(`contacted:v1:name:${norm(name)}`, true, { ex: SEVEN_DAYS }),
