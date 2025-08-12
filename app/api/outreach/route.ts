@@ -27,26 +27,8 @@ interface PageSpeedResponse {
   lighthouseResult?: { categories?: { performance?: { score?: number } } };
 }
 type PerfNum = number | "N/A";
-
-interface GoogleTextSearchPlace {
-  place_id: string;
-  name: string;
-}
-interface GoogleTextSearchResponse {
-  results?: GoogleTextSearchPlace[];
-  error_message?: string;
-}
-
-interface GooglePlaceDetailsResult {
-  formatted_phone_number?: string;
-  website?: string;
-}
-interface GooglePlaceDetailsResponse {
-  result?: GooglePlaceDetailsResult;
-  error_message?: string;
-}
-
 type BusinessEntry = {
+  id: string; // 🔑 include place_id
   name: string;
   url: string | null;
   phone: string | null;
@@ -55,7 +37,7 @@ type BusinessEntry = {
   performanceScore: { mobile: PerfNum; desktop: PerfNum };
   priorityScore: number;
 };
-
+type GooglePlaceResult = { place_id: string; name: string };
 interface OutreachPayload {
   to: string;
   name: string;
@@ -100,8 +82,8 @@ function norm(s: string) {
   return s.trim().toLowerCase();
 }
 
-function delay(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms));
+async function delay(ms: number) {
+  await new Promise((r) => setTimeout(r, ms));
 }
 
 async function fetchJson<T>(
@@ -166,7 +148,6 @@ async function getPageSpeedScore(
       kv.get<PerfNum>(`ps:v1:desktop:${host}`),
     ]);
 
-    // Only return cached if BOTH are present
     if (cM !== null && cD !== null) {
       return { mobile: cM as PerfNum, desktop: cD as PerfNum };
     }
@@ -191,7 +172,6 @@ async function getPageSpeedScore(
     const mobile = getScore(mobileData);
     const desktop = getScore(desktopData);
 
-    // Cache only numeric scores so you don't pin N/A for a week
     const writes: Promise<unknown>[] = [];
     if (typeof mobile === "number")
       writes.push(kv.set(`ps:v1:mobile:${host}`, mobile, { ex: SEVEN_DAYS }));
@@ -237,27 +217,22 @@ export async function GET(req: Request) {
       devLog(`♻️ Refresh requested for "${queryParam}" (purging caches)`);
     }
 
-    // Fetch places
-    const mapsData = await fetchJson<GoogleTextSearchResponse>(
+    const mapsData = await fetchJson<any>(
       `${GOOGLE_TEXT_SEARCH}?query=${encodeURIComponent(queryParam)}&key=${API_KEY}`,
       15000,
       "Google Text Search"
     );
     if (mapsData.error_message) throw new Error(mapsData.error_message);
 
-    const places: GoogleTextSearchPlace[] = (mapsData.results || []).slice(
-      0,
-      20
-    );
+    const places: GooglePlaceResult[] = (mapsData.results || []).slice(0, 20);
 
-    // On refresh: clear list + details + PageSpeed
     if (refresh) {
       await kv.del(cacheKey);
       await mapWithConcurrency(places, 5, async (place) => {
         const detailsKey = `place:v1:${place.place_id}`;
         await kv.del(detailsKey);
         try {
-          const d = await fetchJson<GooglePlaceDetailsResponse>(
+          const d = await fetchJson<any>(
             `${GOOGLE_PLACE_DETAILS}?place_id=${place.place_id}&fields=website&key=${API_KEY}`,
             9000,
             "Google Place Details (refresh)"
@@ -277,7 +252,6 @@ export async function GET(req: Request) {
       });
     }
 
-    // Build rows
     const results: BusinessEntry[] = await mapWithConcurrency(
       places,
       4,
@@ -296,7 +270,7 @@ export async function GET(req: Request) {
           devLog(`⚡ Details cache hit for "${place.name}"`);
         } else {
           try {
-            const details = await fetchJson<GooglePlaceDetailsResponse>(
+            const details = await fetchJson<any>(
               `${GOOGLE_PLACE_DETAILS}?place_id=${place.place_id}&fields=formatted_phone_number,website&key=${API_KEY}`,
               15000,
               "Google Place Details"
@@ -319,6 +293,7 @@ export async function GET(req: Request) {
         const mobileScore = performanceScore.mobile;
 
         return {
+          id: place.place_id, // 🔑 send unique id to the client
           name: place.name,
           url: normUrl,
           phone,
@@ -383,12 +358,11 @@ export async function POST(req: Request) {
 
       const safe = (s: string) =>
         String(s)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#39;");
-
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       const startsWithGreeting = /^\s*(hi|hello|dear)\b/i.test(message);
       const contentHtml = safe(message).replace(/\r?\n/g, "<br/>");
 
@@ -445,7 +419,7 @@ export async function POST(req: Request) {
       });
     }
 
-    /* Write contacted flags so reconciliation shows “Contacted” reliably */
+    // Write contacted flags (so reconciliation shows “Contacted” after send)
     const writes: Promise<unknown>[] = [
       kv.set(`contacted:${name}`, true, { ex: SEVEN_DAYS }), // legacy
       kv.set(`contacted:v1:name:${norm(name)}`, true, { ex: SEVEN_DAYS }),

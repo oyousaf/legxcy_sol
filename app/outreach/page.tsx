@@ -17,6 +17,7 @@ type PerfNumber = number | "N/A";
 type PerformanceScore = { mobile: PerfNumber; desktop: PerfNumber } | "N/A";
 
 type SiteData = {
+  id: string; // 🔑 unique (place_id)
   name: string;
   url: string | null;
   phone?: string | null;
@@ -89,6 +90,12 @@ function coerceSites(input: unknown): SiteData[] {
       if (!d || typeof d !== "object") return null;
       const obj = d as Record<string, unknown>;
 
+      const id =
+        typeof obj.id === "string" && obj.id.trim().length > 0
+          ? obj.id
+          : null;
+      if (!id) return null; // require a real id
+
       const name = typeof obj.name === "string" ? obj.name : "";
       const url =
         typeof obj.url === "string" ? obj.url : obj.url === null ? null : null;
@@ -116,7 +123,7 @@ function coerceSites(input: unknown): SiteData[] {
             : typeof pso.mobile === "number"
               ? pso.mobile
               : typeof pso.mobile === "string" &&
-                  !Number.isNaN(Number(pso.mobile))
+                !Number.isNaN(Number(pso.mobile))
                 ? Number(pso.mobile)
                 : "N/A";
         const desktop: PerfNumber =
@@ -125,7 +132,7 @@ function coerceSites(input: unknown): SiteData[] {
             : typeof pso.desktop === "number"
               ? pso.desktop
               : typeof pso.desktop === "string" &&
-                  !Number.isNaN(Number(pso.desktop))
+                !Number.isNaN(Number(pso.desktop))
                 ? Number(pso.desktop)
                 : "N/A";
         performanceScore = { mobile, desktop };
@@ -135,11 +142,12 @@ function coerceSites(input: unknown): SiteData[] {
         typeof obj.priorityScore === "number"
           ? obj.priorityScore
           : typeof obj.priorityScore === "string" &&
-              !Number.isNaN(Number(obj.priorityScore))
+            !Number.isNaN(Number(obj.priorityScore))
             ? Number(obj.priorityScore)
             : 0;
 
       return {
+        id,
         name: String(name),
         url,
         phone,
@@ -185,7 +193,9 @@ export default function OutreachPage() {
       fetchAbortRef.current = ctrl;
 
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}${forceRefresh ? "&refresh=1" : ""}`;
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${
+          forceRefresh ? "&refresh=1" : ""
+        }`;
 
         const res = await fetch(url, {
           signal: ctrl.signal,
@@ -225,6 +235,7 @@ export default function OutreachPage() {
   const loadContacted = useCallback(async () => {
     if (!sites.length) return;
     try {
+      // still keyed by name to match your /api/contacted
       const names = sites.map((s) => encodeURIComponent(s.name)).join(",");
       const res = await fetch(`/api/contacted?names=${names}`, {
         cache: "no-store",
@@ -277,14 +288,14 @@ export default function OutreachPage() {
     setComposeOpen(true);
   }, []);
 
-  /** Email path: pure local optimistic → POST /api/outreach (which writes KV) → reconcile */
+  /** Email path: optimistic → POST /api/outreach → reconcile */
   const sendOutreach = useCallback(async () => {
     if (!composeTo?.email) {
       alert("Please add a recipient email.");
       return;
     }
 
-    // local optimistic (no network)
+    // optimistic UI
     setContacted((prev) => ({ ...prev, [composeTo.name]: true }));
 
     try {
@@ -304,15 +315,13 @@ export default function OutreachPage() {
       const j = (await res.json()) as unknown;
       if (!res.ok) {
         const msg =
-          j &&
-          typeof j === "object" &&
-          "error" in (j as Record<string, unknown>)
+          j && typeof j === "object" && "error" in (j as Record<string, unknown>)
             ? String((j as Record<string, unknown>).error)
             : "Send failed";
         throw new Error(msg);
       }
 
-      // Analytics (optional)
+      // optional analytics
       if (typeof window !== "undefined") {
         const w = window as AnalyticsWindow;
         const recipientDomain = composeTo.email.split("@").pop() ?? "";
@@ -455,7 +464,7 @@ export default function OutreachPage() {
               <AnimatePresence initial={false}>
                 {filteredSites.map((site) => (
                   <motion.li
-                    key={site.name}
+                    key={site.id}
                     layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
