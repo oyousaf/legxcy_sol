@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSyncAlt, FaFacebook, FaGoogle } from "react-icons/fa";
 import Modal from "./Modal";
+
+/* ───────── Types ───────── */
 
 type PerfNumber = number | "N/A";
 type PerformanceScore = { mobile: PerfNumber; desktop: PerfNumber } | "N/A";
@@ -27,10 +35,15 @@ type ComposeTo = {
   website?: string;
 } | null;
 
+type ContactedMap = Record<string, boolean>;
+
+/* ───────── Utilities ───────── */
+
 const badgeColour = (score: PerfNumber) => {
   if (score === "N/A") return "bg-gray-600";
-  if (score >= 90) return "bg-green-600";
-  if (score >= 50) return "bg-yellow-500 text-black";
+  if (typeof score === "number" && score >= 90) return "bg-green-600";
+  if (typeof score === "number" && score >= 50)
+    return "bg-yellow-500 text-black";
   return "bg-red-600";
 };
 
@@ -60,6 +73,79 @@ function SkeletonCard() {
   );
 }
 
+/** Narrow, safe coercion of API JSON to SiteData[] */
+function coerceSites(input: unknown): SiteData[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((d): SiteData | null => {
+      if (!d || typeof d !== "object") return null;
+      const obj = d as Record<string, unknown>;
+
+      const name = typeof obj.name === "string" ? obj.name : "";
+      const url =
+        typeof obj.url === "string" ? obj.url : obj.url === null ? null : null;
+      const phone =
+        typeof obj.phone === "string"
+          ? obj.phone
+          : obj.phone === null
+            ? null
+            : null;
+      const hasWebsite = Boolean(obj.hasWebsite);
+      const profileLink =
+        typeof obj.profileLink === "string"
+          ? obj.profileLink
+          : obj.profileLink === null
+            ? null
+            : undefined;
+
+      let performanceScore: PerformanceScore = "N/A";
+      const ps = obj.performanceScore as unknown;
+      if (ps && typeof ps === "object" && ps !== null) {
+        const pso = ps as Record<string, unknown>;
+        const mobile =
+          pso.mobile === "N/A"
+            ? "N/A"
+            : typeof pso.mobile === "number"
+              ? pso.mobile
+              : typeof pso.mobile === "string" &&
+                  !Number.isNaN(Number(pso.mobile))
+                ? Number(pso.mobile)
+                : "N/A";
+        const desktop =
+          pso.desktop === "N/A"
+            ? "N/A"
+            : typeof pso.desktop === "number"
+              ? pso.desktop
+              : typeof pso.desktop === "string" &&
+                  !Number.isNaN(Number(pso.desktop))
+                ? Number(pso.desktop)
+                : "N/A";
+        performanceScore = { mobile, desktop };
+      }
+
+      const priorityScore =
+        typeof obj.priorityScore === "number"
+          ? obj.priorityScore
+          : typeof obj.priorityScore === "string" &&
+              !Number.isNaN(Number(obj.priorityScore))
+            ? Number(obj.priorityScore)
+            : 0;
+
+      return {
+        name: String(name),
+        url,
+        phone,
+        hasWebsite,
+        profileLink,
+        performanceScore,
+        priorityScore,
+      };
+    })
+    .filter(Boolean) as SiteData[];
+}
+
+/* ───────── Component ───────── */
+
 export default function OutreachPage() {
   const initialQuery =
     typeof window !== "undefined"
@@ -67,69 +153,49 @@ export default function OutreachPage() {
         "businesses in Ossett")
       : "businesses in Ossett";
 
-  const [query, setQuery] = useState(initialQuery);
-  const [inputQuery, setInputQuery] = useState(initialQuery);
+  const [query, setQuery] = useState<string>(initialQuery);
+  const [inputQuery, setInputQuery] = useState<string>(initialQuery);
   const [sites, setSites] = useState<SiteData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [contacted, setContacted] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [contacted, setContacted] = useState<ContactedMap>({});
   const [filterBy, setFilterBy] = useState<FilterType>("all");
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
-  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState<boolean>(false);
   const [composeTo, setComposeTo] = useState<ComposeTo>(null);
-  const [composeMsg, setComposeMsg] = useState("");
-  const [sending, setSending] = useState(false);
+  const [composeMsg, setComposeMsg] = useState<string>("");
+  const [sending, setSending] = useState<boolean>(false);
 
   const fetchAbortRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(
     async (forceRefresh = false) => {
       setLoading(true);
+
+      // abort in-flight request (tab switchers of the world, rejoice)
       fetchAbortRef.current?.abort();
       const ctrl = new AbortController();
       fetchAbortRef.current = ctrl;
 
       try {
-        const url = `/api/outreach?query=${encodeURIComponent(query)}${forceRefresh ? "&refresh=1" : ""}`;
-        // Client uses no-store; server does the caching via KV
+        const url = `/api/outreach?query=${encodeURIComponent(query)}${
+          forceRefresh ? "&refresh=1" : ""
+        }`;
+
         const res = await fetch(url, {
           signal: ctrl.signal,
-          cache: "no-store",
+          cache: "no-store", // client never caches; server controls via KV
         });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-        const data = await res.json();
+        const json = (await res.json()) as unknown;
 
-        if (!Array.isArray(data)) {
-          setSites([]);
-          return;
-        }
-
-        const safe: SiteData[] = data.map((d: any) => ({
-          name: String(d.name ?? ""),
-          url: d.url ?? null,
-          phone: d.phone ?? null,
-          hasWebsite: Boolean(d.hasWebsite),
-          profileLink: d.profileLink ?? null,
-          performanceScore:
-            d.performanceScore && typeof d.performanceScore === "object"
-              ? {
-                  mobile:
-                    d.performanceScore.mobile === "N/A"
-                      ? "N/A"
-                      : Number(d.performanceScore.mobile),
-                  desktop:
-                    d.performanceScore.desktop === "N/A"
-                      ? "N/A"
-                      : Number(d.performanceScore.desktop),
-                }
-              : "N/A",
-          priorityScore: Number(d.priorityScore ?? 0),
-        }));
-
+        const safe = coerceSites(json);
         setSites(safe);
         setLastUpdated(new Date().toLocaleString());
       } catch (e) {
-        if ((e as Error).name !== "AbortError") setSites([]);
+        if ((e as Error).name !== "AbortError") {
+          setSites([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -159,7 +225,7 @@ export default function OutreachPage() {
         cache: "no-store",
       });
       if (!res.ok) throw new Error("contacted fetch failed");
-      const json = (await res.json()) as Record<string, boolean>;
+      const json = (await res.json()) as ContactedMap;
       setContacted(json);
     } catch {
       setContacted({});
@@ -170,19 +236,18 @@ export default function OutreachPage() {
     loadContacted();
   }, [loadContacted]);
 
+  /** Button path: optimistic → POST → reconcile */
   const markAsContacted = useCallback(
     async (name: string, value: boolean) => {
-      setContacted((prev) => ({ ...prev, [name]: value })); // optimistic
-
+      setContacted((prev) => ({ ...prev, [name]: value })); // local optimistic
       try {
         const res = await fetch("/api/contacted", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ updates: [{ name, contacted: value }] }),
         });
-
         if (!res.ok) throw new Error("failed");
-        await loadContacted(); // reconcile with KV
+        await loadContacted(); // reconcile KV truth
       } catch {
         setContacted((prev) => ({ ...prev, [name]: !value })); // rollback
       }
@@ -197,22 +262,25 @@ export default function OutreachPage() {
       business: site.name,
       website: site.url ?? undefined,
     });
+
     setComposeMsg(
       `I came across your business and noticed you may not currently have a website — or the existing one might be due a modern refresh.\n\n` +
         `At Legxcy Solutions, we design and develop high-performance, bespoke websites tailored to each business’s identity and aspirations.\n\n` +
         `If you're open to a brief chat, I'd be delighted to explore how we can strengthen your online presence.`
     );
+
     setComposeOpen(true);
   }, []);
 
+  /** Email path: pure local optimistic → POST /api/outreach (which writes KV) → reconcile */
   const sendOutreach = useCallback(async () => {
     if (!composeTo?.email) {
       alert("Please add a recipient email.");
       return;
     }
 
-    // instant optimistic UI
-    markAsContacted(composeTo.name, true);
+    // local optimistic (no network)
+    setContacted((prev) => ({ ...prev, [composeTo.name]: true }));
 
     try {
       setSending(true);
@@ -228,23 +296,37 @@ export default function OutreachPage() {
         }),
       });
 
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Send failed");
+      const j = (await res.json()) as unknown;
+      if (!res.ok) {
+        const msg =
+          j &&
+          typeof j === "object" &&
+          "error" in (j as Record<string, unknown>)
+            ? String((j as Record<string, unknown>).error)
+            : "Send failed";
+        throw new Error(msg);
+      }
 
-      window.gtag?.("event", "outreach_email_sent", {
-        recipient_domain: composeTo.email.split("@").pop(),
-        business: composeTo.business || composeTo.name,
-      });
+      // Analytics (optional, safe guard)
+      if (typeof window !== "undefined") {
+        const recipientDomain = composeTo.email.split("@").pop();
+        (window as any).gtag?.("event", "outreach_email_sent", {
+          recipient_domain: recipientDomain,
+          business: composeTo.business || composeTo.name,
+        });
+      }
 
+      // Outreach route writes KV; we only need to reconcile
+      await loadContacted();
       setComposeOpen(false);
     } catch (e) {
-      // rollback if send fails
-      markAsContacted(composeTo.name, false);
+      // rollback if send failed
+      setContacted((prev) => ({ ...prev, [composeTo.name]: false }));
       alert((e as Error).message);
     } finally {
       setSending(false);
     }
-  }, [composeTo, composeMsg, markAsContacted]);
+  }, [composeMsg, composeTo, loadContacted]);
 
   const filteredSites = useMemo(() => {
     return sites
@@ -456,7 +538,9 @@ export default function OutreachPage() {
 
                     <div className="mt-4 flex gap-3 flex-wrap">
                       <a
-                        href={`https://www.google.com/search?q=${encodeURIComponent(`${site.name} site:facebook.com`)}`}
+                        href={`https://www.google.com/search?q=${encodeURIComponent(
+                          `${site.name} site:facebook.com`
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 p-2 rounded-full font-bold bg-indigo-600 hover:bg-indigo-700"
