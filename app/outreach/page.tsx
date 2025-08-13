@@ -12,7 +12,6 @@ import type { SiteData, ComposeTo, FilterType } from "./types";
 
 export default function OutreachPage() {
   const {
-    query,
     setQuery,
     inputQuery,
     setInputQuery,
