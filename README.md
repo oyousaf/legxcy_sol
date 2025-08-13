@@ -14,10 +14,10 @@ A sleek, modern, responsive website to showcase professional freelance web devel
   - Cloudflare Turnstile
   - Honeypot spam protection
   - Sonner for toasts
-  - `/api/contact` serverless route
+  - Serverless API routes
 - 🔝 Floating scroll-to-top button with animation
 - 🦶 Dynamic footer with animated entry and live year
-- 🎨 Tailwind CSS custom theme (using `--accent-green`)
+- 🎨 Tailwind CSS
 - ✅ Fully responsive and accessible layout
 
 ---
@@ -32,4 +32,4 @@ A sleek, modern, responsive website to showcase professional freelance web devel
 - **Cloudflare Turnstile** — CAPTCHA-free bot protection
 - **Sonner** — elegant toast notifications
 - **React Icons** — iconography
-- **Vercel** — hosting and serverless backend
+- **Vercel** — hosting and serverless backend with cron job
