@@ -34,6 +34,7 @@ type ComposeTo = {
   name: string;
   business?: string;
   website?: string;
+  contactKey: string;
 } | null;
 
 type ContactedMap = Record<string, boolean>;
@@ -271,11 +272,13 @@ export default function OutreachPage() {
   );
 
   const openCompose = useCallback((site: SiteData) => {
+    const contactKey = site.id || site.name;
     setComposeTo({
       email: "",
       name: site.name,
       business: site.name,
       website: site.url ?? undefined,
+      contactKey,
     });
 
     setComposeMsg(
@@ -294,8 +297,10 @@ export default function OutreachPage() {
       return;
     }
 
+    const contactKey = composeTo.contactKey;
+
     // optimistic UI
-    setContacted((prev) => ({ ...prev, [composeTo.name]: true }));
+    setContacted((prev) => ({ ...prev, [contactKey]: true }));
 
     try {
       setSending(true);
@@ -308,6 +313,7 @@ export default function OutreachPage() {
           business: composeTo.business,
           website: composeTo.website,
           message: composeMsg.trim(),
+          contactKey, // ✅ tell server which key to mark
         }),
       });
 
@@ -335,7 +341,7 @@ export default function OutreachPage() {
       await loadContacted();
       setComposeOpen(false);
     } catch (e) {
-      setContacted((prev) => ({ ...prev, [composeTo.name]: false }));
+      setContacted((prev) => ({ ...prev, [contactKey]: false }));
       alert((e as Error).message);
     } finally {
       setSending(false);
@@ -345,9 +351,10 @@ export default function OutreachPage() {
   const filteredSites = useMemo(() => {
     return sites
       .filter((site) => {
+        const key = site.id || site.name;
         if (filterBy === "noWebsite") return !site.hasWebsite;
-        if (filterBy === "contacted") return contacted[site.name];
-        if (filterBy === "notContacted") return !contacted[site.name];
+        if (filterBy === "contacted") return contacted[key];
+        if (filterBy === "notContacted") return !contacted[key];
         return true;
       })
       .sort((a, b) => b.priorityScore - a.priorityScore);

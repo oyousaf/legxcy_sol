@@ -50,7 +50,7 @@ interface GooglePlaceDetailsResponse {
 }
 
 type BusinessEntry = {
-  id: string; // place_id to help the UI key stay unique if you want it
+  id: string;
   name: string;
   url: string | null;
   phone: string | null;
@@ -67,6 +67,7 @@ interface OutreachPayload {
   website?: string;
   message: string;
   subject?: string;
+  contactKey?: string;
 }
 
 /* ───────── Helpers ───────── */
@@ -170,7 +171,6 @@ async function getPageSpeedScore(
       kv.get<PerfNum>(`ps:v1:desktop:${host}`),
     ]);
 
-    // Return cached only if BOTH present (prevents half-cached oscillation)
     if (cM !== null && cD !== null) {
       return { mobile: cM as PerfNum, desktop: cD as PerfNum };
     }
@@ -195,7 +195,6 @@ async function getPageSpeedScore(
     const mobile = getScore(mobileData);
     const desktop = getScore(desktopData);
 
-    // Cache only numeric scores (avoid pinning N/A for a week)
     const writes: Promise<unknown>[] = [];
     if (typeof mobile === "number")
       writes.push(kv.set(`ps:v1:mobile:${host}`, mobile, { ex: SEVEN_DAYS }));
@@ -246,7 +245,6 @@ export async function GET(req: Request) {
       devLog(`♻️ Refresh requested for "${queryParam}" (purging caches)`);
     }
 
-    // Fetch places (text search)
     const mapsData = await fetchJson<GoogleTextSearchResponse>(
       `${GOOGLE_TEXT_SEARCH}?query=${encodeURIComponent(queryParam)}&key=${API_KEY}`,
       15000,
@@ -256,7 +254,7 @@ export async function GET(req: Request) {
 
     const rawPlaces = (mapsData.results || []).slice(0, 20);
 
-    // Dedupe BEFORE details/pagespeed: by name + formatted_address (fallback to place_id)
+    // Dedupe by name + formatted_address (fallback to place_id)
     const seen = new Set<string>();
     const places: GoogleTextSearchItem[] = [];
     for (const p of rawPlaces) {
@@ -266,7 +264,6 @@ export async function GET(req: Request) {
       places.push(p);
     }
 
-    // On refresh: clear list + details + PageSpeed
     if (refresh) {
       await kv.del(cacheKey);
       await mapWithConcurrency(places, 5, async (place) => {
@@ -293,7 +290,6 @@ export async function GET(req: Request) {
       });
     }
 
-    // Build rows
     const results: BusinessEntry[] = await mapWithConcurrency(
       places,
       4,
@@ -357,7 +353,6 @@ export async function GET(req: Request) {
       }
     );
 
-    // Hybrid filter (no site, non-https, or poor perf)
     const filtered = results.filter((entry) => {
       if (!entry.hasWebsite) return true;
       if (entry.url && !entry.url.startsWith("https")) return true;
@@ -467,12 +462,21 @@ export async function POST(req: Request) {
       });
     }
 
-    // Mark contacted (short TTL here; UI reconciles regularly)
+    /* ───────── Mark contacted in KV ─────────
+       Use a unified contactKey when provided (site.id || site.name),
+       but keep legacy writes for name/business/email to remain compatible.
+    */
+    const unifiedKey = body.contactKey?.trim() || body.business?.trim() || name;
+
     const writes: Promise<unknown>[] = [
+      kv.set(`contacted:${unifiedKey}`, true, { ex: SEVEN_DAYS }),
+
+      // Legacy / convenience indices (keep them)
       kv.set(`contacted:${name}`, true, { ex: SEVEN_DAYS }),
       kv.set(`contacted:v1:name:${norm(name)}`, true, { ex: SEVEN_DAYS }),
       kv.set(`contacted:v1:email:${norm(to)}`, true, { ex: SEVEN_DAYS }),
     ];
+
     if (body.business) {
       writes.push(
         kv.set(`contacted:${body.business}`, true, { ex: SEVEN_DAYS })
@@ -483,6 +487,7 @@ export async function POST(req: Request) {
         })
       );
     }
+
     await Promise.all(writes);
 
     return NextResponse.json({ ok: true, contacted: true });

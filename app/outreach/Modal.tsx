@@ -1,18 +1,22 @@
 "use client";
 
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+export type ComposeTo = {
+  email: string;
+  name: string;
+  business?: string;
+  website?: string;
+  contactKey: string;
+} | null;
 
 type ModalProps = {
   open: boolean;
-  to: {
-    email: string;
-    name: string;
-    business?: string;
-    website?: string;
-  } | null;
+  to: ComposeTo;
   message: string;
   sending: boolean;
-  setTo: (to: ModalProps["to"]) => void;
+  setTo: React.Dispatch<React.SetStateAction<ComposeTo>>;
   setMessage: (msg: string) => void;
   onClose: () => void;
   onSend: () => void;
@@ -58,7 +62,11 @@ export default function Modal({
             <input
               className="w-full mb-3 px-3 py-2 rounded bg-white/10 text-white border border-white/20"
               value={to.name}
-              onChange={(e) => setTo({ ...to, name: e.target.value })}
+              onChange={(e) =>
+                setTo((prev) =>
+                  prev ? { ...prev, name: e.target.value } : prev
+                )
+              }
             />
 
             <label className="block text-sm text-gray-200 mb-1">
@@ -68,7 +76,11 @@ export default function Modal({
               className="w-full mb-3 px-3 py-2 rounded bg-white/10 text-white border border-white/20"
               placeholder="owner@business.com"
               value={to.email}
-              onChange={(e) => setTo({ ...to, email: e.target.value })}
+              onChange={(e) =>
+                setTo((prev) =>
+                  prev ? { ...prev, email: e.target.value } : prev
+                )
+              }
             />
 
             <label className="block text-sm text-gray-200 mb-1">Message</label>
