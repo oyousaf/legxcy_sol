@@ -1,8 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { FaWhatsapp } from "react-icons/fa";
+import { trackWhatsAppClick } from "@/lib/gtag";
 
 export default function Footer() {
+  const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    trackWhatsAppClick();
+    window.open("https://wa.me/447597866002", "_blank");
+  };
+
   return (
     <motion.footer
       initial={{ opacity: 0, y: 20 }}
@@ -23,6 +31,17 @@ export default function Footer() {
         <p className="text-base font-medium">
           A legxcy of innovation, one pixel at a time.
         </p>
+
+        {/* WhatsApp link (tracked) */}
+        <a
+          href="https://wa.me/447597866002"
+          aria-label="Message us on WhatsApp"
+          onClick={handleWhatsAppClick}
+          className="flex items-center gap-2 mt-4 text-green-400 hover:text-green-500 transition"
+        >
+          <FaWhatsapp size={20} />
+          <span>Chat with us on WhatsApp</span>
+        </a>
       </div>
     </motion.footer>
   );
