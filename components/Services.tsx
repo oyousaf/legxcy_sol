@@ -53,7 +53,7 @@ const services = [
   },*/
   {
     icon: <FaUsers size={32} />,
-    title: "UX/UI Design for Small Businesses",
+    title: "UI/UX Design for Small Businesses",
     desc: "Clean, intuitive interfaces that make browsing effortless for your customers.",
   },
   {
