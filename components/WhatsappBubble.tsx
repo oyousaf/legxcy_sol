@@ -2,23 +2,17 @@
 
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
-import * as gtag from "@/lib/gtag";
 import { useState } from "react";
+import { trackWhatsAppClick } from "@/lib/gtag";
 
 export default function WhatsAppBubble() {
   const [showTooltip, setShowTooltip] = useState(false);
 
   const handleClick = () => {
-    gtag.event({
-      action: "whatsapp_click",
-      params: {
-        category: "engagement",
-        label: "WhatsApp Chat Bubble",
-        value: 1,
-      },
-    });
+    // 🔥 Unified GA4 + Ads conversion tracking
+    trackWhatsAppClick();
 
-    // Open WhatsApp chat
+    // Open WhatsApp chat in new tab
     window.open("https://wa.me/447597866002", "_blank");
   };
 

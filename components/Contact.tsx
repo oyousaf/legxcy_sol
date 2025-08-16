@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
-import * as gtag from "@/lib/gtag";
+import { trackFormSubmit } from "@/lib/gtag";
 
 declare global {
   interface Window {
@@ -39,7 +39,7 @@ export default function Contact() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const widgetRef = useRef<HTMLDivElement | null>(null);
 
-  // Lazy-load Turnstile widget
+  // ✅ Lazy-load Turnstile only when form visible
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -68,7 +68,7 @@ export default function Contact() {
     return () => observer.disconnect();
   }, [scriptLoaded]);
 
-  // Handle form submission
+  // ✅ Handle form submission
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
     if (data.website) return; // honeypot trap
     if (!token) return toast.error("Please complete the verification.");
@@ -82,14 +82,8 @@ export default function Contact() {
 
       if (!res.ok) throw new Error("Failed to send message");
 
-      gtag.event({
-        action: "form_submit",
-        params: {
-          category: "Contact",
-          label: "Contact Form",
-          value: 1,
-        },
-      });
+      // 🔥 Unified GA4 + Ads conversion tracking
+      trackFormSubmit();
 
       toast.success("Message sent successfully!");
       setSent(true);
