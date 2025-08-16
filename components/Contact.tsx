@@ -82,7 +82,6 @@ export default function Contact() {
 
       if (!res.ok) throw new Error("Failed to send message");
 
-      // ✅ GA4-compatible event tracking
       gtag.event({
         action: "form_submit",
         params: {
@@ -91,15 +90,6 @@ export default function Contact() {
           value: 1,
         },
       });
-
-      // Optional: direct GA4 call for DebugView
-      if (typeof window.gtag !== "undefined") {
-        window.gtag("event", "form_submit", {
-          category: "Contact",
-          label: "Contact Form",
-          value: 1,
-        });
-      }
 
       toast.success("Message sent successfully!");
       setSent(true);

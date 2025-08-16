@@ -9,7 +9,6 @@ export default function WhatsAppBubble() {
   const [showTooltip, setShowTooltip] = useState(false);
 
   const handleClick = () => {
-    // ✅ GA4-style event tracking
     gtag.event({
       action: "whatsapp_click",
       params: {
@@ -18,15 +17,6 @@ export default function WhatsAppBubble() {
         value: 1,
       },
     });
-
-    // Extra direct GA4 call for DebugView (optional)
-    if (typeof window.gtag !== "undefined") {
-      window.gtag("event", "whatsapp_click", {
-        category: "engagement",
-        label: "WhatsApp Chat Bubble",
-        value: 1,
-      });
-    }
 
     // Open WhatsApp chat
     window.open("https://wa.me/447597866002", "_blank");
