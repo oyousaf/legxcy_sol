@@ -4,7 +4,6 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 import { trackFormSubmit } from "@/lib/gtag";
 
 declare global {
@@ -39,7 +38,7 @@ export default function Contact() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const widgetRef = useRef<HTMLDivElement | null>(null);
 
-  // ✅ Lazy-load Turnstile only when form visible
+  // Lazy-load Turnstile
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -68,9 +67,9 @@ export default function Contact() {
     return () => observer.disconnect();
   }, [scriptLoaded]);
 
-  // ✅ Handle form submission
+  // Handle form submission
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    if (data.website) return; // honeypot trap
+    if (data.website) return; // honeypot
     if (!token) return toast.error("Please complete the verification.");
 
     try {
@@ -211,35 +210,6 @@ export default function Contact() {
           {isSubmitting ? "Sending..." : sent ? "Sent!" : "Send Message"}
         </motion.button>
       </form>
-
-      {/* Social links */}
-      <div className="flex justify-center gap-6 mt-10">
-        <a
-          href="mailto:info@legxcysol.dev"
-          aria-label="Send us an email"
-          className="text-white hover:text-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
-        >
-          <FaEnvelope size={24} />
-        </a>
-        <a
-          href="https://t.me/kufiii"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Chat with us on Telegram"
-          className="text-white hover:text-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
-        >
-          <FaTelegramPlane size={24} />
-        </a>
-        <a
-          href="https://wa.me/447597866002"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Message us on WhatsApp"
-          className="text-white hover:text-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] rounded-full p-2"
-        >
-          <FaWhatsapp size={24} />
-        </a>
-      </div>
     </section>
   );
 }
