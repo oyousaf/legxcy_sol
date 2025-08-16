@@ -4,30 +4,26 @@ import { motion } from "framer-motion";
 import { FaTelegramPlane, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 import * as gtag from "@/lib/gtag";
 
+type EventParams = {
+  category: string;
+  label: string;
+  value: number;
+};
+
 export default function Footer() {
-  // 🔥 Unified click tracking + Ads WhatsApp conversion
   const handleSocialClick = (platform: string, url: string) => {
-    if (platform === "WhatsApp") {
-      // Google Ads WhatsApp conversion
-      // Make sure gtag is globally loaded via _document or <Script>
-      (window as any).gtag?.("event", "conversion", {
-        send_to: "AW-17399690522/q0VoCOnIuYcbEJrq6OhA",
-        value: 1.0,
-        currency: "GBP",
-        event_callback: () => window.open(url, "_blank"),
-      });
-    } else {
-      // GA4 custom event
-      gtag.event({
-        action: `${platform.toLowerCase()}_click`,
-        params: {
-          category: "social",
-          label: platform,
-          value: 1,
-        },
-      });
-      window.open(url, "_blank");
-    }
+    const params: EventParams = {
+      category: "social",
+      label: platform,
+      value: 1,
+    };
+
+    gtag.event({
+      action: `${platform.toLowerCase()}_click`,
+      params,
+    });
+
+    window.open(url, "_blank");
   };
 
   return (
