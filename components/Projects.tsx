@@ -149,7 +149,7 @@ export default function Projects() {
                     href={p.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-3xl sm:text-5xl text-gray-200 hover:text-white flex items-center justify-center"
+                    className="text-4xl text-gray-200 hover:text-white flex items-center justify-center"
                     whileHover={{ scale: 1.1 }}
                     transition={{ type: "spring", stiffness: 250, damping: 18 }}
                   >
