@@ -15,29 +15,19 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legxcysol.dev"),
-  title: "Legxcy Solutions",
-  description: "Where Vision Meets Innovation",
-  keywords: [
-    "Freelance web developer UK",
-    "Next.js developer EMEA",
-    "Responsive website design",
-    "Modern web development services",
-    "Custom business websites",
-    "Legxcy Solutions digital agency",
-    "Frontend developer UK",
-    "Web development for startups",
-    "Bespoke websites EMEA",
-    "SEO-optimised websites",
-    "UX/UI design for SMEs",
-    "Professional website builder UK",
-    "React and Next.js developer",
-    "Mobile-first web design",
-    "High-performance websites",
-  ],
-  alternates: { canonical: "/" },
+  title: {
+    default: "Legxcy Solutions | Modern Web Design & Digital Solutions",
+    template: "%s | Legxcy Solutions",
+  },
+  description:
+    "Legxcy Solutions is a digital agency delivering bespoke, high-performance websites and modern web solutions for forward-thinking businesses across the UK and EMEA.",
+  alternates: {
+    canonical: "https://legxcysol.dev/",
+  },
   openGraph: {
-    title: "Legxcy Solutions",
-    description: "Bespoke websites crafted for impact.",
+    title: "Legxcy Solutions | Modern Web Design & Digital Solutions",
+    description:
+      "Bespoke websites and digital experiences engineered for performance, clarity, and growth.",
     url: "https://legxcysol.dev",
     siteName: "Legxcy Solutions",
     locale: "en_GB",
@@ -47,14 +37,15 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Legxcy Solutions – Where Vision Meets Innovation",
+        alt: "Legxcy Solutions – Modern Web Design & Digital Solutions",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Legxcy Solutions",
-    description: "Where Vision Meets Innovation",
+    title: "Legxcy Solutions | Digital Agency",
+    description:
+      "High-performance websites and modern digital solutions for growing businesses.",
     images: ["/og-image.jpg"],
   },
   icons: {
@@ -118,7 +109,7 @@ export default function RootLayout({
           </>
         )}
 
-        {/* Structured Data for SEO (Privacy-friendly) */}
+        {/* Structured Data */}
         <Script
           id="structured-data"
           type="application/ld+json"
@@ -126,20 +117,21 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "ProfessionalService",
+              "@type": "WebDevelopmentService",
               name: "Legxcy Solutions",
               url: "https://legxcysol.dev",
               logo: "https://legxcysol.dev/logo.webp",
               image: "https://legxcysol.dev/og-image.jpg",
               description:
-                "Freelance web development service offering bespoke, modern, high-performance websites for UK and EMEA businesses.",
-              areaServed: [
-                "United Kingdom",
-                "Europe, Middle East, and Africa (EMEA)",
-              ],
+                "Digital agency providing bespoke web design and modern web development solutions for growing businesses.",
+              serviceType: "Web Design and Development",
+              areaServed: {
+                "@type": "AdministrativeArea",
+                name: "United Kingdom",
+              },
               contactPoint: {
                 "@type": "ContactPoint",
-                contactType: "Customer Support",
+                contactType: "Business Enquiries",
                 email: "info@legxcysol.dev",
                 telephone: "+447597866002",
                 url: "https://legxcysol.dev",
