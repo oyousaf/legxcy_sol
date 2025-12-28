@@ -2,17 +2,29 @@
 module.exports = {
   siteUrl: "https://legxcysol.dev",
   generateRobotsTxt: true,
-  sitemapSize: 7000,
+
+  sitemapSize: 5000,
+
   changefreq: "weekly",
   priority: 0.7,
+
   exclude: ["/api/*", "/outreach", "/outreach/*"],
+
   robotsTxtOptions: {
     policies: [
       {
         userAgent: "*",
-        disallow: ["/outreach", "/outreach/"],
         allow: "/",
+        disallow: ["/api", "/api/*", "/outreach", "/outreach/*"],
       },
     ],
   },
+
+  additionalPaths: async () => [
+    {
+      loc: "/",
+      changefreq: "weekly",
+      priority: 1.0,
+    },
+  ],
 };
