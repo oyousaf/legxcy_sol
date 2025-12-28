@@ -21,16 +21,16 @@ export default function Hero() {
     <section
       id="home"
       className="relative w-full h-screen flex items-center justify-center text-white overflow-hidden"
-      aria-label="Hero section introducing Legxcy Solutions"
+      aria-label="Legxcy Solutions digital agency hero section"
     >
       {/* Background banner */}
       <Image
         src="/banner.webp"
-        alt="Legxcy Solutions hero banner"
+        alt="Modern web design and digital solutions by Legxcy Solutions"
         fill
         priority
-        style={{ objectFit: "cover" }}
-        className="absolute inset-0 z-0 brightness-[0.55]"
+        sizes="100vw"
+        className="absolute inset-0 z-0 object-cover brightness-[0.55]"
       />
 
       {/* Gradient overlay */}
@@ -46,32 +46,43 @@ export default function Hero() {
         <div className="flex justify-center mb-4">
           <Image
             src="/logo.webp"
-            alt="Legxcy Solutions Logo"
+            alt="Legxcy Solutions digital agency logo"
             width={80}
             height={80}
             priority
           />
         </div>
 
+        {/* Primary heading */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8 }}
           className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--accent-green)] to-teal-300 bg-clip-text text-transparent"
         >
-          Where Vision Meets Innovation
+          Where Vision Meets Innovation in Digital Solutions
         </motion.h1>
 
+        {/* Supporting copy — audience expanded */}
         <motion.p
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
           className="mt-4 text-lg text-gray-100 leading-relaxed"
         >
-          Bespoke websites engineered for performance and clarity — responsive
-          by design, built to elevate your digital presence.
+          Bespoke websites and digital experiences engineered for performance
+          and clarity — tailored for businesses, personal brands, creators, and
+          online professionals building a strong digital presence.
         </motion.p>
 
+        {/* Quiet SEO reinforcement */}
+        <p className="sr-only">
+          Legxcy Solutions designs modern websites and digital experiences for
+          businesses, creators, personal brands, and online professionals across
+          diverse industries.
+        </p>
+
+        {/* CTA */}
         <motion.button
           onClick={handleSmoothScroll}
           whileHover={{ scale: 1.05 }}
@@ -80,8 +91,9 @@ export default function Hero() {
           className="inline-block mt-6 px-8 py-3 cursor-pointer text-white font-semibold rounded-lg shadow-md 
                      bg-gradient-to-r from-[var(--accent-green)] to-teal-500 hover:from-teal-500 hover:to-[var(--accent-green)]
                      focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] focus:ring-offset-2"
+          aria-label="Request a website audit from Legxcy Solutions"
         >
-          Request a Free Audit
+          Request a Website Audit
         </motion.button>
       </motion.div>
     </section>
