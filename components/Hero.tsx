@@ -60,10 +60,9 @@ export default function Hero() {
           transition={{ delay: 0.2, duration: 0.8 }}
           className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--accent-green)] to-teal-300 bg-clip-text text-transparent"
         >
-          Where Vision Meets Innovation in Digital Solutions
+          Where Vision Meets Innovation
         </motion.h1>
 
-        {/* Supporting copy — audience expanded */}
         <motion.p
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
