@@ -70,7 +70,7 @@ export default function OutreachPage() {
   }, [sites, filterBy, contacted]);
 
   return (
-    <main className="flex flex-col items-center justify-center px-6 py-12 min-h-screen bg-[var(--mossy-bg)]">
+    <main className="flex flex-col items-center justify-center px-6 py-12 min-h-screen bg-(--mossy-bg)">
       {/* HEADER */}
       <div className="w-full max-w-5xl text-center">
         <motion.h1
@@ -97,7 +97,7 @@ export default function OutreachPage() {
 
       {/* SEARCH / FILTER */}
       <motion.div
-        className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-stretch gap-3 md:gap-4 mb-10 border bg-[var(--mossy-bg)] border-[var(--accent-green)]/70"
+        className="p-5 rounded-xl shadow-lg flex flex-col md:flex-row md:flex-wrap justify-center items-stretch gap-3 md:gap-4 mb-10 border bg-(--mossy-bg) border-(--accent-green)/70"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -114,12 +114,12 @@ export default function OutreachPage() {
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
             placeholder="Search businesses..."
-            className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] w-full sm:w-64 bg-[var(--dark-mint)]/90 border border-[var(--accent-green)]/60"
+            className="px-4 py-2 rounded-lg text-white text-center placeholder-gray-200 focus:outline-none focus:ring-2 focus:ring-(--accent-green) w-full sm:w-64 bg-(--dark-mint)/90 border border-(--accent-green)/60"
             aria-label="Search query"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-lg font-semibold shadow-md text-white bg-[var(--accent-green)] hover:brightness-110 active:scale-95 transition"
+            className="px-4 py-2 rounded-lg font-semibold shadow-md text-white bg-(--accent-green) hover:brightness-110 active:scale-95 transition"
           >
             🔍 Search
           </button>
@@ -128,7 +128,7 @@ export default function OutreachPage() {
         <select
           value={filterBy}
           onChange={(e) => setFilterBy(e.target.value as FilterType)}
-          className="px-4 py-2 rounded-lg text-white w-full sm:w-56 text-center bg-[var(--dark-mint)]/90 border border-[var(--accent-green)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+          className="px-4 py-2 rounded-lg text-white w-full sm:w-56 text-center bg-(--dark-mint)/90 border border-(--accent-green)/60 focus:outline-none focus:ring-2 focus:ring-(--accent-green)"
         >
           <option value="all">Show All</option>
           <option value="noWebsite">No Website Only</option>
@@ -138,7 +138,7 @@ export default function OutreachPage() {
 
         <motion.button
           onClick={() => fetchData(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-[var(--accent-green)] hover:brightness-110 active:scale-95 transition"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-(--accent-green) hover:brightness-110 active:scale-95 transition"
           whileTap={{ scale: 0.95 }}
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 0.4 }}
@@ -183,7 +183,7 @@ export default function OutreachPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 20 }}
                       transition={{ delay: 0.05 }}
-                      className="p-6 rounded-xl shadow-lg text-left border bg-[var(--dark-mint)] border-[var(--accent-green)]/70"
+                      className="p-6 rounded-xl shadow-lg text-left border bg-(--dark-mint) border-(--accent-green)/70"
                     >
                       <div className="flex justify-between items-start flex-col md:flex-row gap-4">
                         <div>
