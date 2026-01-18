@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSyncAlt, FaFacebook, FaGoogle, FaGlobe } from "react-icons/fa";
 
