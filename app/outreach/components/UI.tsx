@@ -23,7 +23,7 @@ export function ScoreBadge({ label, value }: { label: string; value: PerfNumber 
 
 export function SkeletonCard() {
   return (
-    <div className="p-6 rounded-xl border shadow-lg bg-[var(--dark-mint)] border-[var(--accent-green)] animate-pulse">
+    <div className="p-6 rounded-xl border shadow-lg bg-(--dark-mint) border-(--accent-green) animate-pulse">
       <div className="h-6 w-1/3 bg-white/20 rounded mb-3" />
       <div className="h-4 w-1/4 bg-white/10 rounded mb-2" />
       <div className="h-4 w-1/5 bg-white/10 rounded" />
