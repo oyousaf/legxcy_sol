@@ -106,7 +106,7 @@ export default function Services() {
       className="relative min-h-screen px-6 sm:px-12 py-24 overflow-hidden"
     >
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--mossy-bg)]/95 via-[var(--mossy-bg)]/85 to-[var(--dark-mint)]/95 -z-10" />
+      <div className="absolute inset-0 bg-linear-to-b from-(--mossy-bg)/95 via-(--mossy-bg)/85 to-(--dark-mint)/95 -z-10" />
 
       {/* Section content */}
       <div className="max-w-7xl mx-auto text-center relative z-10">
@@ -116,7 +116,7 @@ export default function Services() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
+          className="text-4xl sm:text-6xl font-bold mb-6 bg-linear-to-r from-(--accent-green) to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
         >
           Our Services
         </motion.h2>
@@ -127,7 +127,7 @@ export default function Services() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-lg sm:text-xl max-w-2xl mx-auto mb-16 text-[var(--foreground)] leading-relaxed"
+          className="text-lg sm:text-xl max-w-2xl mx-auto mb-16 text-(--foreground) leading-relaxed"
         >
           Transforming visions into high‑impact digital solutions — designed to
           inspire, perform, and scale with your business.
@@ -148,14 +148,14 @@ export default function Services() {
                 boxShadow: "0px 14px 28px rgba(0,0,0,0.25)",
               }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-[var(--accent-green)] p-7 rounded-2xl shadow-xl transition-all duration-300 group text-center"
+              className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-(--accent-green) p-7 rounded-2xl shadow-xl transition-all duration-300 group text-center"
             >
               {/* Icon */}
               <div className="flex justify-center mb-4">
                 <motion.div
                   whileHover={{ rotate: -3, y: -2 }}
                   transition={{ type: "spring", stiffness: 200, damping: 18 }}
-                  className="text-[var(--accent-green)]"
+                  className="text-(--accent-green)"
                 >
                   {s.icon}
                 </motion.div>
@@ -165,7 +165,7 @@ export default function Services() {
               <h3 className="text-xl font-semibold text-white mb-3">
                 {s.title}
               </h3>
-              <p className="text-[var(--foreground)] text-sm sm:text-base">
+              <p className="text-(--foreground) text-sm sm:text-base">
                 {s.desc}
               </p>
             </motion.div>

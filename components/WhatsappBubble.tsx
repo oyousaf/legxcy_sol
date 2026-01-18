@@ -23,7 +23,7 @@ export default function WhatsAppBubble() {
         initial={{ opacity: 0 }}
         animate={{ opacity: showTooltip ? 1 : 0 }}
         transition={{ duration: 0.2 }}
-        className="hidden sm:block absolute left-16 px-2 py-1 text-xs text-white bg-[var(--mossy-bg)] rounded shadow"
+        className="hidden sm:block absolute left-16 px-2 py-1 text-xs text-white bg-(--mossy-bg) rounded shadow"
         style={{ pointerEvents: "none" }}
       >
         Chat on WhatsApp

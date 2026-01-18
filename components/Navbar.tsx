@@ -70,7 +70,7 @@ export default function Navbar() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 w-full z-[99] backdrop-blur-md border-b border-white/10"
+      className="fixed top-0 left-0 w-full z-99 backdrop-blur-md border-b border-white/10"
       style={{ backgroundColor: "rgba(15, 47, 35, 0.85)" }}
     >
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-4">
@@ -97,7 +97,7 @@ export default function Navbar() {
             <li key={link.name}>
               <button
                 onClick={() => handleScroll(link.id)}
-                className="hover:text-[var(--accent-green)] transition-colors cursor-pointer"
+                className="hover:text-(--accent-green) transition-colors cursor-pointer"
               >
                 {link.name}
               </button>
@@ -106,7 +106,7 @@ export default function Navbar() {
         </ul>
 
         {/* Mobile Toggle */}
-        <div className="md:hidden text-white z-[100] relative">
+        <div className="md:hidden text-white z-100 relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
@@ -126,7 +126,7 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 z-[90] backdrop-blur-xl bg-black/60 saturate-150"
+              className="fixed inset-0 z-90 backdrop-blur-xl bg-black/60 saturate-150"
               onClick={() => setMenuOpen(false)}
               style={{ boxShadow: "inset 0 0 80px rgba(0, 0, 0, 0.7)" }}
             />
@@ -137,13 +137,13 @@ export default function Navbar() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: "100%", scale: 0.95 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="md:hidden fixed top-0 left-0 w-full h-screen z-[95] bg-[#0F2F23]/95 backdrop-blur-2xl px-6 py-20 flex flex-col items-center justify-center space-y-8 text-white shadow-xl"
+              className="md:hidden fixed top-0 left-0 w-full h-screen z-95 bg-[#0F2F23]/95 backdrop-blur-2xl px-6 py-20 flex flex-col items-center justify-center space-y-8 text-white shadow-xl"
             >
               {navLinks.map((link, index) => (
                 <motion.button
                   key={link.name}
                   onClick={() => handleScroll(link.id)}
-                  className="text-2xl font-medium hover:text-[var(--accent-green)] transition-colors"
+                  className="text-2xl font-medium hover:text-(--accent-green) transition-colors"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}

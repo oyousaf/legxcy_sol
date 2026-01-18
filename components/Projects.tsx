@@ -75,7 +75,7 @@ export default function Projects() {
       className="relative min-h-screen px-6 sm:px-12 py-24 overflow-hidden"
     >
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--dark-mint)]/95 via-[var(--dark-mint)]/85 to-[var(--mossy-bg)]/95 -z-10" />
+      <div className="absolute inset-0 bg-linear-to-b from-(--dark-mint)/95 via-(--dark-mint)/85 to-(--mossy-bg)/95 -z-10" />
 
       {/* Section content */}
       <div className="max-w-7xl mx-auto text-center relative z-10">
@@ -84,7 +84,7 @@ export default function Projects() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--accent-green)] to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
+          className="text-4xl sm:text-6xl font-bold mb-6 bg-linear-to-r from-(--accent-green) to-teal-200 bg-clip-text text-transparent leading-[1.2] pb-[0.15em]"
         >
           Projects
         </motion.h2>
@@ -93,7 +93,7 @@ export default function Projects() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-lg sm:text-xl text-[var(--foreground)] mb-16 max-w-3xl mx-auto leading-relaxed"
+          className="text-lg sm:text-xl text-(--foreground) mb-16 max-w-3xl mx-auto leading-relaxed"
         >
           A curated selection of bespoke projects — from sleek single-page sites
           to powerful full-stack business platforms.
@@ -114,7 +114,7 @@ export default function Projects() {
                 boxShadow: "0px 14px 28px rgba(0,0,0,0.25)",
               }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="group bg-white/5 backdrop-blur-lg border border-white/10 hover:border-[var(--accent-green)] rounded-2xl overflow-hidden shadow-xl transition-all duration-300"
+              className="group bg-white/5 backdrop-blur-lg border border-white/10 hover:border-(--accent-green) rounded-2xl overflow-hidden shadow-xl transition-all duration-300"
             >
               {/* Video preview */}
               <div className="relative w-full h-52 overflow-hidden">
@@ -141,7 +141,7 @@ export default function Projects() {
                 <h3 className="text-xl font-semibold text-white mb-2">
                   {p.name}
                 </h3>
-                <p className="text-[var(--foreground)] mb-4 text-sm sm:text-base max-w-xs">
+                <p className="text-(--foreground) mb-4 text-sm sm:text-base max-w-xs">
                   {p.desc}
                 </p>
                 {p.link && (
