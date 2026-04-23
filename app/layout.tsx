@@ -142,14 +142,19 @@ export default function RootLayout({
         />
       </head>
 
-      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${inter.variable} ${geistMono.variable} antialiased relative`}
+      >
         <LenisProvider>
           <Navbar />
           <ScrollToTop />
           <WhatsAppBubble />
-          <main className="pt-20">{children}</main>
+
+          <main className="pt-20 relative">{children}</main>
+
           <Footer />
         </LenisProvider>
+
         <Analytics />
       </body>
     </html>
