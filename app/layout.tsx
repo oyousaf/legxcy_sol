@@ -80,15 +80,6 @@ export default function RootLayout({
           crossOrigin=""
         />
 
-        {/* Preload Logo */}
-        <link
-          rel="preload"
-          href="/logo.webp"
-          as="image"
-          type="image/webp"
-          fetchPriority="high"
-        />
-
         {/* Google Analytics */}
         {GA_TRACKING_ID && (
           <>
