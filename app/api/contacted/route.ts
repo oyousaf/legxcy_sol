@@ -1,3 +1,4 @@
+import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
@@ -16,6 +17,8 @@ const THIRTY_DAYS = 60 * 60 * 24 * 30;
    Keys should be the same contactKey used in the UI (site.id || site.name)
 */
 export async function GET(req: Request) {
+  const denied = requireOutreachAuth(req);
+  if (denied) return denied;
   try {
     const { searchParams } = new URL(req.url);
     const namesParam = searchParams.get("names");
@@ -67,6 +70,8 @@ export async function GET(req: Request) {
    Uses contactKey if provided; falls back to name for compatibility.
 */
 export async function POST(req: Request) {
+  const denied = requireOutreachAuth(req);
+  if (denied) return denied;
   try {
     const body = (await req.json()) as { updates: UpdateItem[] };
 
@@ -80,6 +85,7 @@ export async function POST(req: Request) {
     const writes: Promise<unknown>[] = [];
 
     for (const item of updates) {
+      if (!item || typeof item !== "object") continue;
       const rawKey =
         (typeof item.contactKey === "string" && item.contactKey) ||
         (typeof item.name === "string" && item.name) ||

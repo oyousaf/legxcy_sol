@@ -1,14 +1,11 @@
+import SiteShell from "@/components/SiteShell";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import LenisProvider from "@/lib/LenisProvider";
-import Footer from "@/components/Footer";
-import ScrollToTop from "@/components/ScrollToTop";
+
 import { Inter, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GA_TRACKING_ID } from "@/lib/gtag";
-import WhatsAppBubble from "@/components/WhatsappBubble";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -51,8 +48,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico" },
-      { url: "/icon.png", type: "image/png", sizes: "32x32" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      {
+        url: "/android-chrome-192x192.png",
+        type: "image/png",
+        sizes: "192x192",
+      },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
@@ -62,7 +62,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0f2f23",
+  themeColor: "#0c211b",
 };
 
 export default function RootLayout({
@@ -136,15 +136,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased relative`}
       >
-        <LenisProvider>
-          <Navbar />
-          <ScrollToTop />
-          <WhatsAppBubble />
-
-          <main className="pt-20 relative">{children}</main>
-
-          <Footer />
-        </LenisProvider>
+        <SiteShell>{children}</SiteShell>
 
         <Analytics />
       </body>

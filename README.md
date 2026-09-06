@@ -32,4 +32,4 @@ A sleek, modern, responsive website to showcase professional freelance web devel
 - **Cloudflare Turnstile** — CAPTCHA-free bot protection
 - **Sonner** — elegant toast notifications
 - **React Icons** — iconography
-- **Vercel** — hosting and serverless backend with cron job
+- **Vercel** — hosting and serverless backend

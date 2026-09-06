@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const limiter = new RateLimiterMemory({ points: 3, duration: 900 }); // 3 requests per 15 min
 
 interface ContactRequestBody {
@@ -14,10 +14,10 @@ interface ContactRequestBody {
 }
 
 const sanitize = (str: string) =>
-  String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
 
   let body: ContactRequestBody;
   try {
@@ -26,6 +26,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  if (!body || typeof body !== "object" ||
+      [body.name, body.email, body.message, body.token].some(value => typeof value !== "string" || !value.trim()) ||
+      body.name.length > 200 || body.email.length > 254 || body.message.length > 10000 || body.token.length > 2048 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+    return NextResponse.json({ error: "Invalid fields" }, { status: 400 });
+  }
+  if (!resend || !process.env.TURNSTILE_SECRET_KEY || !process.env.RESEND_FROM_EMAIL || !process.env.RESEND_TO_EMAIL) {
+    return NextResponse.json({ error: "Contact form is unavailable" }, { status: 503 });
+  }
   const { name, email, message, website, token } = body;
   const firstName = sanitize(name).split(" ")[0];
 
@@ -34,18 +43,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Bot detected" }, { status: 400 });
   }
 
-  // Required fields check
-  if (!name || !email || !message || !token) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  // Rate limit
+  try {
+    await limiter.consume(ip);
+  } catch {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
+
   // Verify Turnstile
+  try {
   const captchaRes = await fetch(
     "https://challenges.cloudflare.com/turnstile/v0/siteverify",
     {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${token}`,
+      body: new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY, response: token }),
+      signal: AbortSignal.timeout(10000),
     }
   );
 
@@ -56,12 +70,8 @@ export async function POST(req: Request) {
       { status: 403 }
     );
   }
-
-  // Rate limit
-  try {
-    await limiter.consume(ip);
   } catch {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    return NextResponse.json({ error: "Verification unavailable" }, { status: 503 });
   }
 
   try {
@@ -115,6 +125,8 @@ Sent via Legxcy Solutions Website
         </div>
       `,
     });
+
+    if (data.error) return NextResponse.json({ error: "Email delivery failed" }, { status: 502 });
 
     // 📩 Auto-reply to user
     await resend.emails.send({
@@ -178,7 +190,7 @@ Legxcy Solutions
     return NextResponse.json({
       success: true,
       message: "Thanks for reaching out! We’ll get back to you shortly.",
-      data,
+
     });
   } catch (err) {
     console.error("Email send failed:", err);

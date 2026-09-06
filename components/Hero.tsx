@@ -1,100 +1,61 @@
 "use client";
+import SectionLink from "./SectionLink";
 
-import { motion } from "framer-motion";
-import Image from "next/image";
-
+import { FiArrowUpRight, FiArrowDownRight } from "react-icons/fi";
 export default function Hero() {
-  const handleSmoothScroll = () => {
-    const target = document.querySelector("#contact") as HTMLElement | null;
-    const lenis = (
-      window as unknown as { lenis?: { scrollTo: (el: Element) => void } }
-    ).lenis;
-
-    if (target && typeof lenis?.scrollTo === "function") {
-      lenis.scrollTo(target);
-    } else if (target) {
-      target.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
-    <section
-      id="home"
-      className="relative w-full h-screen flex items-center justify-center text-white overflow-hidden"
-      aria-label="Legxcy Solutions digital agency hero section"
-    >
-      {/* Background banner */}
-      <Image
-        src="/banner.webp"
-        alt="Modern web design and digital solutions by Legxcy Solutions"
-        fill
-        priority
-        sizes="100vw"
-        className="absolute inset-0 z-0 object-cover brightness-[0.55]"
-      />
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-linear-to-b from-(--mossy-bg)/95 via-(--mossy-bg)/85 to-(--dark-mint)/95 z-0" />
-
-      {/* Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        className="relative z-10 p-6 sm:p-12 backdrop-blur-md bg-white/10 border border-white/10 rounded-xl max-w-2xl mx-4 text-center shadow-xl"
-      >
-        <div className="flex justify-center mb-4">
-          <Image
-            src="/logo.webp"
-            alt="Legxcy Solutions digital agency logo"
-            width={80}
-            height={80}
-            priority
-          />
-        </div>
-
-        {/* Primary heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="text-4xl md:text-6xl font-bold bg-linear-to-r from-(--accent-green) to-teal-300 bg-clip-text text-transparent"
-        >
-          Where Vision Meets Innovation
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="mt-4 text-lg text-gray-100 leading-relaxed"
-        >
-          Bespoke websites and digital experiences engineered for performance
-          and clarity — tailored for businesses, personal brands, creators, and
-          online professionals building a strong digital presence.
-        </motion.p>
-
-        {/* Quiet SEO reinforcement */}
-        <p className="sr-only">
-          Legxcy Solutions designs modern websites and digital experiences for
-          businesses, creators, personal brands, and online professionals across
-          diverse industries.
+    <section id="home" className="hero wrap">
+      <div className="hero-top">
+        <span className="eyebrow">Independent digital studio · UK</span>
+        <span className="pill">Design with purpose. Built to last.</span>
+      </div>
+      <h1>
+        A better presence.
+        <br />
+        <em>A lasting impression.</em>
+      </h1>
+      <div className="hero-bottom">
+        <p>
+          Distinctive websites and thoughtful digital tools for businesses ready
+          for their next chapter.
         </p>
-
-        {/* CTA */}
-        <motion.button
-          onClick={handleSmoothScroll}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 260, damping: 18 }}
-          className="inline-block mt-6 px-8 py-3 cursor-pointer text-white font-semibold rounded-lg shadow-md 
-                     bg-linear-to-r from-(--accent-green) to-teal-500 hover:from-teal-500 hover:to-(--accent-green)
-                     focus:outline-none focus:ring-2 focus:ring-(--accent-green) focus:ring-offset-2"
-          aria-label="Request a website audit from Legxcy Solutions"
-        >
-          Request a Website Audit
-        </motion.button>
-      </motion.div>
+        <div className="hero-actions">
+          <SectionLink id="projects" className="btn btn-primary">
+            Explore our work <FiArrowDownRight />
+          </SectionLink>
+          <SectionLink id="contact" className="btn">
+            Start a conversation <FiArrowUpRight />
+          </SectionLink>
+        </div>
+      </div>
+      <a
+        className="feature-project"
+        href="https://acemotorsales.uk"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="View Ace Motor Sales project (opens in a new tab)"
+      >
+        <video
+          src="/projects/ams.webm"
+          muted
+          playsInline
+          loop
+          preload="metadata"
+          onMouseEnter={(e) => {
+            void e.currentTarget.play().catch(() => {});
+          }}
+          onMouseLeave={(e) => e.currentTarget.pause()}
+        />
+        <div className="feature-caption">
+          <div>
+            <p>Featured work / Automotive</p>
+            <h2>Ace Motor Sales</h2>
+          </div>
+          <span className="round-arrow">
+            <FiArrowUpRight />
+          </span>
+        </div>
+      </a>
     </section>
   );
 }
