@@ -11,8 +11,14 @@ export default function Navbar() {
     const close = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    const desktop = window.matchMedia("(min-width: 801px)");
+    const closeOnDesktop = () => { if (desktop.matches) setOpen(false); };
     window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => {
+      window.removeEventListener("keydown", close);
+      desktop.removeEventListener("change", closeOnDesktop);
+    };
   }, []);
   return (
     <header className="nav-shell">

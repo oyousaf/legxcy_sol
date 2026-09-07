@@ -6,7 +6,7 @@ export default function Hero() {
   return (
     <section id="home" className="hero wrap">
       <div className="hero-top">
-        <span className="eyebrow">Independent digital studio · UK</span>
+        <span className="eyebrow">Independent web design studio · UK</span>
         <span className="pill">Design with purpose. Built to last.</span>
       </div>
       <h1>
@@ -16,8 +16,8 @@ export default function Hero() {
       </h1>
       <div className="hero-bottom">
         <p>
-          Distinctive websites and thoughtful digital tools for businesses ready
-          for their next chapter.
+          Bespoke web design, development and website redesign for UK businesses
+          ready for their next chapter.
         </p>
         <div className="hero-actions">
           <SectionLink id="projects" className="btn btn-primary">

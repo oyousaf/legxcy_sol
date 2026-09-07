@@ -1,3 +1,4 @@
+import { site } from "@/lib/site";
 import SiteShell from "@/components/SiteShell";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
@@ -11,20 +12,15 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://legxcysol.dev"),
+  metadataBase: new URL(site.url),
   title: {
-    default: "Legxcy Solutions | Modern Web Design & Digital Solutions",
+    default: `${site.title} | ${site.name}`,
     template: "%s | Legxcy Solutions",
   },
-  description:
-    "Legxcy Solutions is a digital agency delivering bespoke, high-performance websites and modern web solutions for forward-thinking businesses across the UK and EMEA.",
-  alternates: {
-    canonical: "https://legxcysol.dev/",
-  },
+  description: site.description,
   openGraph: {
-    title: "Legxcy Solutions | Modern Web Design & Digital Solutions",
-    description:
-      "Bespoke websites and digital experiences engineered for performance, clarity, and growth.",
+    title: `${site.title} | ${site.name}`,
+    description: site.description,
     url: "https://legxcysol.dev",
     siteName: "Legxcy Solutions",
     locale: "en_GB",
@@ -40,9 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Legxcy Solutions | Digital Agency",
-    description:
-      "High-performance websites and modern digital solutions for growing businesses.",
+    title: `${site.title} | ${site.name}`,
+    description: site.description,
     images: ["/og-image.jpg"],
   },
   icons: {
@@ -71,15 +66,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en-GB">
       <head>
-        {/* Preconnect for Google Fonts */}
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-
         {/* Google Analytics */}
         {GA_TRACKING_ID && (
           <>
@@ -100,37 +88,6 @@ export default function RootLayout({
           </>
         )}
 
-        {/* Structured Data */}
-        <Script
-          id="structured-data"
-          type="application/ld+json"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebDevelopmentService",
-              name: "Legxcy Solutions",
-              url: "https://legxcysol.dev",
-              logo: "https://legxcysol.dev/logo.webp",
-              image: "https://legxcysol.dev/og-image.jpg",
-              description:
-                "Digital agency providing bespoke web design and modern web development solutions for growing businesses.",
-              serviceType: "Web Design and Development",
-              areaServed: {
-                "@type": "AdministrativeArea",
-                name: "United Kingdom",
-              },
-              contactPoint: {
-                "@type": "ContactPoint",
-                contactType: "Business Enquiries",
-                email: "info@legxcysol.dev",
-                telephone: "+447597866002",
-                url: "https://legxcysol.dev",
-              },
-              sameAs: ["https://www.linkedin.com/company/legxcy-solutions/"],
-            }),
-          }}
-        />
       </head>
 
       <body

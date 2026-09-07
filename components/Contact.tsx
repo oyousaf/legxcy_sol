@@ -59,6 +59,7 @@ export default function Contact() {
       return;
     widgetId.current = window.turnstile.render(widgetRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
+      size: "compact",
       callback: (value: string) => setToken(value),
       "expired-callback": () => setToken(""),
       "error-callback": () => {
@@ -92,6 +93,9 @@ export default function Contact() {
       sentTimer.current = setTimeout(() => setSent(false), 3000);
     } catch {
       toast.error("Something went wrong. Please try again.");
+    } finally {
+      setToken("");
+      if (widgetId.current) window.turnstile?.reset(widgetId.current);
     }
   };
 
@@ -115,26 +119,18 @@ export default function Contact() {
       <div className="absolute inset-0 bg-linear-to-b from-(--mossy-bg)/95 via-(--mossy-bg)/85 to-(--dark-mint)/95 -z-10" />
 
       {/* Heading */}
-      <motion.h2
+      <h2
         id="contact-heading"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
         className="text-4xl sm:text-6xl font-bold mb-6 bg-linear-to-r from-(--accent-green) to-teal-200 bg-clip-text text-transparent leading-[1.2]"
       >
         Have something in mind?
-      </motion.h2>
-      <motion.p
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        viewport={{ once: true }}
+      </h2>
+      <p
         className="text-lg max-w-2xl mx-auto mb-10 text-(--foreground)"
       >
         Tell us a little about your project. Whether you have a brief or just an
         idea, we’d love to hear from you.
-      </motion.p>
+      </p>
 
       {/* Contact form */}
       <form
@@ -158,37 +154,43 @@ export default function Contact() {
 
         {/* Name */}
         <motion.div>
-          <label htmlFor="name" className="sr-only">
+          <label htmlFor="name" className="contact-label">
             Your Name
           </label>
           <input
             type="text"
             id="name"
+            maxLength={200}
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "name-error" : undefined}
             {...register("name", { required: true })}
             autoComplete="name"
             placeholder="Your Name"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-(--accent-green) focus:outline-none focus:ring-2 focus:ring-(--accent-green)"
           />
           {errors.name && (
-            <span className="text-red-400 text-sm">Name is required</span>
+            <span id="name-error" role="alert" className="text-red-400 text-sm">Name is required</span>
           )}
         </motion.div>
 
         {/* Email */}
         <motion.div>
-          <label htmlFor="email" className="sr-only">
+          <label htmlFor="email" className="contact-label">
             Your Email
           </label>
           <input
             type="email"
             id="email"
+            maxLength={254}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
             {...register("email", { required: true })}
             autoComplete="email"
             placeholder="Your Email"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 placeholder-(--accent-green) focus:outline-none focus:ring-2 focus:ring-(--accent-green)"
           />
           {errors.email && (
-            <span className="text-red-400 text-sm">
+            <span id="email-error" role="alert" className="text-red-400 text-sm">
               Valid email is required
             </span>
           )}
@@ -196,23 +198,26 @@ export default function Contact() {
 
         {/* Message */}
         <motion.div>
-          <label htmlFor="message" className="sr-only">
+          <label htmlFor="message" className="contact-label">
             Your Message
           </label>
           <textarea
             id="message"
+            maxLength={10000}
+            aria-invalid={!!errors.message}
+            aria-describedby={errors.message ? "message-error" : undefined}
             {...register("message", { required: true })}
             rows={5}
             placeholder="Your Message"
             className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/10 text-white placeholder-(--accent-green) focus:outline-none focus:ring-2 focus:ring-(--accent-green) resize-none"
           />
           {errors.message && (
-            <span className="text-red-400 text-sm">Message is required</span>
+            <span id="message-error" role="alert" className="text-red-400 text-sm">Message is required</span>
           )}
         </motion.div>
 
         {/* Turnstile */}
-        <div ref={widgetRef} className="text-center min-h-17.5" />
+        <div ref={widgetRef} className="captcha-widget" />
 
         {/* Submit button */}
         <motion.button

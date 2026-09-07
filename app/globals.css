@@ -637,3 +637,19 @@ section[id] {
 .nav-links > button:hover {
   color: var(--accent-green);
 }
+
+/* Audit: allow enlarged text and narrow screens to reflow without clipping. */
+.hero h1, .section h2, .contact-redesign h2 { overflow-wrap: anywhere; }
+.hero-bottom > *, .about-grid > *, .project-info > * { min-width: 0; }
+.project-info { flex-wrap: wrap; }
+.footer-links { flex-wrap: wrap; }
+.contact-label { display: block; margin-bottom: 8px; font-size: 0.875rem; }
+.captcha-widget { min-height: 140px; }
+@media (max-width: 800px) {
+  .nav-links.open { max-height: calc(100dvh - 72px); overflow-y: auto; }
+  .nav-links.open > button { min-height: 44px; text-align: left; }
+}
+@media (max-width: 360px) {
+  .hero h1 { font-size: clamp(2.5rem, 13vw, 3.45rem); }
+  .principles { grid-template-columns: 1fr; }
+}

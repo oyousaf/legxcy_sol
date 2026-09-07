@@ -4,3 +4,12 @@
 @media(max-width:480px){.work-sidebar{gap:8px;padding:14px}.work-sidebar nav{gap:0}.work-sidebar nav button{gap:6px}.work-sidebar .brand{font-size:.9rem}.work-sidebar .brand img{width:24px;height:24px}.work-content{padding:24px 14px}.work-title h1{font-size:1.8rem}.work-actions{width:100%}.work-actions .btn{flex:1}.work-topbar{padding:0 14px}.storage-pill{font-size:.75rem}.list-toolbar{flex-wrap:wrap;gap:10px}.discovery-grid,.field-grid{grid-template-columns:1fr}.discovery-summary{align-items:flex-start;flex-direction:column}.dialog-inner{padding:20px}}
 
 @media(max-width:380px){.work-sidebar{flex-wrap:wrap}.work-sidebar nav{width:100%;justify-content:space-between}.work-topbar{gap:10px;flex-wrap:wrap}.work-content{padding-inline:12px}}
+
+/* Keep the business table's horizontal scroll inside the workspace. */
+.work-main, .lead-list, .list-toolbar, .list-search { min-width: 0; }
+.work-title h1, .business-name strong, .discovery-card h3 { overflow-wrap: anywhere; }
+.work-sidebar { overflow-y: auto; }
+.dialog-actions, .work-actions { flex-wrap: wrap; }
+@media (max-width: 480px) {
+  .field input, .field textarea, .field select, .search-field input, .workspace select { font-size: 1rem; }
+}
