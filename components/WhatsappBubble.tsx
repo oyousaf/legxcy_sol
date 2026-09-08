@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { FaWhatsapp } from "react-icons/fa";
 import { useState } from "react";
 import { trackWhatsAppClick } from "@/lib/gtag";

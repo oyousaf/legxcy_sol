@@ -3,7 +3,7 @@
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import Script from "next/script";
 import { trackFormSubmit } from "@/lib/gtag";
 
