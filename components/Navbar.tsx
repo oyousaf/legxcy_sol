@@ -3,10 +3,12 @@ import SectionLink from "./SectionLink";
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiArrowUpRight, FiMenu, FiX } from "react-icons/fi";
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   useEffect(() => {
     const close = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -23,7 +25,19 @@ export default function Navbar() {
   return (
     <header className="nav-shell">
       <nav className="wrap nav-inner" aria-label="Main navigation">
-        <Link href="/" className="brand">
+        <Link
+          href="/"
+          className="brand"
+          onClick={(e) => {
+            if (pathname !== "/") return;
+            e.preventDefault();
+            const reduced = window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches;
+            if (window.__lenis) window.__lenis.scrollTo(0, { immediate: reduced });
+            else window.scrollTo({ top: 0, behavior: reduced ? "instant" : "smooth" });
+          }}
+        >
           <Image src="/logo.webp" alt="" width={32} height={32} priority />
           <span>legxcy</span>
           <span>solutions</span>
