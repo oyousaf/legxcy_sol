@@ -38,6 +38,12 @@ const projects = [
     "pollards",
     "https://pollards.vercel.app",
   ],
+  [
+    "Awisee",
+    "A link building and digital PR agency site.",
+    "awisee",
+    "https://awisee.vercel.app",
+  ],
 ];
 export default function Projects() {
   return (
