@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import SectionLink from "./SectionLink";
 
 import { FiArrowUpRight, FiArrowDownRight } from "react-icons/fi";
@@ -35,16 +36,12 @@ export default function Hero() {
         rel="noopener noreferrer"
         aria-label="View Ace Motor Sales project (opens in a new tab)"
       >
-        <video
-          src="/projects/ams.webm"
-          muted
-          playsInline
-          loop
-          preload="metadata"
-          onMouseEnter={(e) => {
-            void e.currentTarget.play().catch(() => {});
-          }}
-          onMouseLeave={(e) => e.currentTarget.pause()}
+        <Image
+          src="/projects/ams.webp"
+          alt="Ace Motor Sales landing page"
+          fill
+          sizes="100vw"
+          priority
         />
         <div className="feature-caption">
           <div>

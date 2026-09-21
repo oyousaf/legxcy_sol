@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
@@ -66,16 +67,11 @@ export default function Projects() {
                 rel="noopener noreferrer"
                 aria-label={`Visit ${name} (opens in a new tab)`}
               >
-                <video
-                  src={`/projects/${file}.webm`}
-                  muted
-                  playsInline
-                  loop
-                  preload="metadata"
-                  onMouseEnter={(e) => {
-                    void e.currentTarget.play().catch(() => {});
-                  }}
-                  onMouseLeave={(e) => e.currentTarget.pause()}
+                <Image
+                  src={`/projects/${file}.webp`}
+                  alt={`${name} landing page`}
+                  fill
+                  sizes="(max-width: 800px) 100vw, 50vw"
                 />
                 <span className="round-arrow">
                   <FiArrowUpRight />
