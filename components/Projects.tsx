@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "Awisee",
+    "A link building and digital PR agency site.",
+    "awisee",
+    "https://awisee.vercel.app",
+  ],
+  [
     "Hxmza",
     "A distinctive home for a car rental business.",
     "hxmza",
@@ -37,12 +43,6 @@ const projects = [
     "Appointments, organised in one place.",
     "pollards",
     "https://pollards.vercel.app",
-  ],
-  [
-    "Awisee",
-    "A link building and digital PR agency site.",
-    "awisee",
-    "https://awisee.vercel.app",
   ],
 ];
 export default function Projects() {
