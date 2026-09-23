@@ -9,7 +9,19 @@ const projects = [
     "https://awisee.vercel.app",
   ],
   [
+    "Hecky Travel",
+    "Flights, holidays and Hajj & Umrah packages.",
+    "htravel",
+    "https://heckytravel.uk",
+  ],
+  [
     "Hxmza",
+    "A distinctive home for a car rental business.",
+    "hxmza-hub",
+    "https://hxmza.vercel.app",
+  ],
+  [
+    "Beds4U",
     "A distinctive home for a car rental business.",
     "hxmza",
     "https://hxmza.uk",
