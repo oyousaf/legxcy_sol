@@ -3,28 +3,28 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
-    "Awisee",
-    "A link building and digital PR agency site.",
-    "awisee",
-    "https://awisee.vercel.app",
-  ],
-  [
     "Hecky Travel",
     "Flights, holidays and Hajj & Umrah packages.",
     "htravel",
     "https://heckytravel.uk",
   ],
   [
-    "Hxmza",
-    "A distinctive home for a car rental business.",
-    "hxmza-hub",
-    "https://hxmza.vercel.app",
+    "Awisee",
+    "A link building and digital PR agency site.",
+    "awisee",
+    "https://awisee.vercel.app",
   ],
   [
     "Beds4U",
     "A distinctive home for a car rental business.",
     "hxmza",
     "https://hxmza.uk",
+  ],
+  [
+    "Hxmza",
+    "A distinctive home for a car rental business.",
+    "hxmza-hub",
+    "https://hxmza.vercel.app",
   ],
   [
     "Legxcy",
