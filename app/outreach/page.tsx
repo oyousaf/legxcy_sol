@@ -19,6 +19,7 @@ import {
   FiTrash2,
   FiChevronsLeft,
   FiChevronsRight,
+  FiInbox,
 } from "react-icons/fi";
 import {
   emptyLead,
@@ -27,6 +28,7 @@ import {
   type LeadInput,
 } from "@/lib/leads/model";
 import { makeCsv, parseCsv } from "@/lib/leads/csv";
+import { businessTypes, towns } from "@/lib/leads/categories";
 import Dialog from "./components/Dialog";
 import "./outreach.css";
 type Panel = "add" | "import" | "edit" | "compose" | null;
@@ -69,11 +71,13 @@ const filters: Record<string, (l: Lead) => boolean> = {
   opportunity: isOpportunity,
   new: (l) => !l.contacted,
   contacted: (l) => l.contacted,
+  awaiting: (l) => !!l.outreach && !l.repliedAt,
+  replied: (l) => !!l.repliedAt,
   nosite: (l) => l.websiteStatus !== "present",
   low: lowScore,
   unchecked: (l) => l.websiteStatus === "present" && !l.performance,
 };
-const TOWNS = ["Ossett", "Wakefield", "Dewsbury", "Leeds", "Huddersfield", "Batley", "Horbury", "Pontefract", "Castleford", "Bradford"];
+const OTHER_TOWN = "__other";
 type DraftInfo = { angle: string; limitedCompany: boolean; siteError: string };
 function stored(key: string) {
   try {
@@ -107,6 +111,7 @@ export default function OutreachPage() {
     [csvName, setCsvName] = useState(""),
     [formError, setFormError] = useState("");
   const [town, setTown] = useState("Ossett"),
+    [customTown, setCustomTown] = useState(false),
     [category, setCategory] = useState("all"),
     [discovered, setDiscovered] = useState<LeadInput[]>([]),
     [discoveryDone, setDiscoveryDone] = useState(false),
@@ -377,6 +382,27 @@ export default function OutreachPage() {
       setBusy("");
     }
   }
+  async function checkReplies() {
+    setBusy("replies");
+    setError("");
+    try {
+      const data = await api<{ checked: number; updated: Lead[] }>(
+        "/api/replies",
+        "POST",
+        {},
+      );
+      data.updated.forEach(updateInList);
+      setNotice(
+        data.updated.length
+          ? `${data.updated.length} new ${data.updated.length === 1 ? "reply" : "replies"}: ${data.updated.map((l) => l.name).join(", ")}.`
+          : `No new replies from ${data.checked} emailed ${data.checked === 1 ? "business" : "businesses"}.`,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
   async function deleteBusiness(lead: Lead) {
     if (!window.confirm(`Delete ${lead.name}? This can't be undone.`)) return;
     setBusy("delete");
@@ -566,15 +592,25 @@ export default function OutreachPage() {
                       </button>
                     ))}
                   </div>
-                  <button
-                    className="text-button"
-                    disabled={!leads.length}
-                    onClick={() =>
-                      download("legxcy-businesses.csv", makeCsv(leads))
-                    }
-                  >
-                    <FiDownload /> Export
-                  </button>
+                  <div className="toolbar-actions">
+                    <button
+                      className="text-button"
+                      disabled={!!busy || !leads.some((l) => l.outreach)}
+                      onClick={() => void checkReplies()}
+                    >
+                      <FiInbox />
+                      {busy === "replies" ? "Checking…" : "Check replies"}
+                    </button>
+                    <button
+                      className="text-button"
+                      disabled={!leads.length}
+                      onClick={() =>
+                        download("legxcy-businesses.csv", makeCsv(leads))
+                      }
+                    >
+                      <FiDownload /> Export
+                    </button>
+                  </div>
                 </div>
                 <div className="list-search">
                   <label className="search-field">
@@ -602,6 +638,8 @@ export default function OutreachPage() {
                     <option value="unchecked">Website not scored yet</option>
                     <option value="new">Not contacted</option>
                     <option value="contacted">Contacted</option>
+                    <option value="awaiting">Emailed, awaiting reply</option>
+                    <option value="replied">Replied</option>
                   </select>
                   <button
                     className="icon-btn"
@@ -728,6 +766,16 @@ export default function OutreachPage() {
                               </small>
                             </td>
                             <td>
+                              {lead.repliedAt && (
+                                <span
+                                  className="badge green replied-badge"
+                                  title={new Date(
+                                    lead.repliedAt,
+                                  ).toLocaleString()}
+                                >
+                                  <FiInbox /> Replied
+                                </span>
+                              )}
                               <button
                                 className={`badge status-button ${lead.contacted ? "green" : ""}`}
                                 disabled={!!busy}
@@ -776,23 +824,39 @@ export default function OutreachPage() {
               <div className="discovery-controls">
                 <div>
                   <label htmlFor="town">Around</label>
-                  <input
+                  <select
                     id="town"
-                    className="town-input"
-                    list="town-options"
-                    value={town}
-                    maxLength={60}
-                    placeholder="Any UK town or city"
-                    onChange={(e) => setTown(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !busy) void discover();
+                    value={customTown ? OTHER_TOWN : town}
+                    onChange={(e) => {
+                      const other = e.target.value === OTHER_TOWN;
+                      setCustomTown(other);
+                      setTown(other ? "" : e.target.value);
                     }}
-                  />
-                  <datalist id="town-options">
-                    {TOWNS.map((t) => (
-                      <option key={t} value={t} />
+                  >
+                    {towns.map(({ group, places }) => (
+                      <optgroup key={group} label={group}>
+                        {places.map((p) => (
+                          <option key={p}>{p}</option>
+                        ))}
+                      </optgroup>
                     ))}
-                  </datalist>
+                    <option value={OTHER_TOWN}>Another town…</option>
+                  </select>
+                  {customTown && (
+                    <input
+                      className="town-input"
+                      aria-label="Town or city"
+                      autoFocus
+                      value={town}
+                      maxLength={60}
+                      placeholder="Type any UK town or city"
+                      onChange={(e) => setTown(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !busy && town.trim())
+                          void discover();
+                      }}
+                    />
+                  )}
                 </div>
                 <div>
                   <label htmlFor="category">Type of business</label>
@@ -801,10 +865,15 @@ export default function OutreachPage() {
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                   >
-                    <option value="all">Shops, food & services</option>
-                    <option value="shops">Shops</option>
-                    <option value="food">Food & drink</option>
-                    <option value="services">Services</option>
+                    {businessTypes.map(({ group, types }) => (
+                      <optgroup key={group} label={group}>
+                        {Object.entries(types).map(([key, t]) => (
+                          <option key={key} value={key}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
                 <button
@@ -817,7 +886,7 @@ export default function OutreachPage() {
                 </button>
               </div>
               <p className="discovery-help">
-                Up to 50 results within 2.5 km. Missing website details mean
+                Searches 2.5 km around the town centre. Missing website details mean
                 “unknown”—please verify before reaching out. Save a business
                 and run a performance check to find slow sites.
               </p>
@@ -1087,9 +1156,9 @@ export default function OutreachPage() {
                 />
               </label>
               <p className="dialog-copy">
-                A signature and “reply no thanks to opt out” line are added
-                automatically. The business is marked contacted after the email
-                is accepted.
+                Sent from your own mailbox, with a copy in your Sent folder. A
+                signature and “reply no thanks to opt out” line are added
+                automatically, and the business is marked contacted once sent.
               </p>
               <div className="dialog-actions">
                 <button className="btn" onClick={close} disabled={!!busy}>

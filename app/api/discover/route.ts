@@ -3,14 +3,10 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { geoapifyLeads } from "@/lib/leads/geoapify";
 import type { LeadInput } from "@/lib/leads/model";
-const limiter = new RateLimiterMemory({ points: 10, duration: 3600 });
+import { categoryMap as categories } from "@/lib/leads/categories";
+// Narrow business types make more, smaller searches, so allow a few more.
+const limiter = new RateLimiterMemory({ points: 30, duration: 3600 });
 const cache = new Map<string, { at: number; leads: LeadInput[] }>();
-const categories = {
-  all: "commercial,catering,service",
-  shops: "commercial",
-  food: "catering",
-  services: "service",
-};
 export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;
@@ -21,7 +17,7 @@ export async function POST(req: Request) {
       { status: 503 },
     );
   let town: string;
-  let category: keyof typeof categories;
+  let category: string;
   try {
     const body = await req.json();
     town = typeof body.town === "string" ? body.town.trim() : "";
@@ -72,20 +68,35 @@ export async function POST(req: Request) {
         { error: `Couldn't find "${town}" in the UK. Check the spelling.` },
         { status: 404 },
       );
-    const places = await fetch(
-      "https://api.geoapify.com/v2/places?" +
-        new URLSearchParams({
-          categories: categories[category],
-          filter: `circle:${p.lon},${p.lat},2500`,
-          limit: "50",
-          apiKey,
-        }),
-      { signal: AbortSignal.timeout(15000) },
-    );
-    if (!places.ok) throw Error();
-    const json = await places.json();
-    if (!Array.isArray(json.features)) throw Error();
-    const leads = geoapifyLeads(json.features);
+    // Geoapify drops results when some categories are combined in one
+    // request, so query each separately (a few at a time) and merge.
+    const search = async (cat: string) => {
+      const res = await fetch(
+        "https://api.geoapify.com/v2/places?" +
+          new URLSearchParams({
+            categories: cat,
+            filter: `circle:${p.lon},${p.lat},2500`,
+            limit: "100",
+            apiKey,
+          }),
+        { signal: AbortSignal.timeout(15000) },
+      );
+      if (!res.ok) throw Error();
+      const json = await res.json();
+      if (!Array.isArray(json.features)) throw Error();
+      return json.features;
+    };
+    const cats = categories[category].split(",");
+    const features = [];
+    for (let i = 0; i < cats.length; i += 4)
+      features.push(...(await Promise.all(cats.slice(i, i + 4).map(search))).flat());
+    const seen = new Set<string>();
+    const leads = geoapifyLeads(features).filter((l) => {
+      const id = l.sourceId || `${l.name}|${l.address}`;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
     cache.set(key, { at: Date.now(), leads });
     return NextResponse.json(
       { leads, cached: false },

@@ -63,3 +63,6 @@
 .pecr-note { border: 1px solid #e4bf8330; background: #e4bf830c; color: #e4bf83; border-radius: 10px; padding: 12px 16px; font-size: .8rem; line-height: 1.6; margin-bottom: 16px; }
 .workspace .btn-danger { margin-right: auto; background: transparent; border: 1px solid #f9757540; color: #ffc6bd; }
 .workspace .btn-danger:hover { background: #f975750f; }
+.toolbar-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.replied-badge { display: flex; width: fit-content; margin-bottom: 8px; }
+.discovery-controls .town-input { margin-top: 8px; }

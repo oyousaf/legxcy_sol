@@ -73,6 +73,115 @@ function pickEmail(emails: string[], website: string) {
   return emails.find((e) => host && e.endsWith("@" + host)) || emails[0] || "";
 }
 
+type Draft = { subject: string; message: string; angle: string };
+type DraftResult = { draft: Draft } | { error: string; status: number };
+
+function parseDraft(text: string, provider: string): DraftResult {
+  try {
+    const d = JSON.parse(text);
+    if ([d.subject, d.message, d.angle].every((v) => typeof v === "string" && v.trim()))
+      return { draft: d };
+  } catch {}
+  return { error: `${provider} returned an unreadable draft. Please retry.`, status: 502 };
+}
+
+async function draftWithClaude(prompt: string): Promise<DraftResult> {
+  const client = new Anthropic();
+  let response;
+  try {
+    response = await client.beta.messages.create({
+      model: "claude-opus-5",
+      max_tokens: 16000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      thinking: { type: "adaptive" },
+      output_config: {
+        effort: "medium",
+        format: { type: "json_schema", schema: SCHEMA },
+      },
+      system: SYSTEM,
+      messages: [{ role: "user", content: prompt }],
+    });
+  } catch (e) {
+    return {
+      status: e instanceof Anthropic.RateLimitError ? 429 : 502,
+      error:
+        e instanceof Anthropic.AuthenticationError
+          ? "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY."
+          : e instanceof Anthropic.RateLimitError
+            ? "Claude is rate limited right now. Try again in a minute."
+            : "Claude could not write a draft. Please retry.",
+    };
+  }
+  if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens")
+    return { error: "Claude did not return a usable draft. Write this one by hand.", status: 502 };
+  const text = response.content.find((b) => b.type === "text");
+  return parseDraft(text?.type === "text" ? text.text : "", "Claude");
+}
+
+// Google AI Studio's free tier. GOOGLE_SERVER_API_KEY works too once the
+// Gemini API is enabled on its Google Cloud project.
+const geminiKey = () =>
+  process.env.GEMINI_API_KEY || process.env.GOOGLE_SERVER_API_KEY || "";
+
+async function draftWithGemini(prompt: string): Promise<DraftResult> {
+  const model = process.env.GEMINI_MODEL || "gemini-flash-latest";
+  let res;
+  try {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey() },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                subject: { type: "STRING" },
+                message: { type: "STRING" },
+                angle: { type: "STRING" },
+              },
+              required: ["subject", "message", "angle"],
+            },
+          },
+        }),
+        signal: AbortSignal.timeout(50000),
+      },
+    );
+  } catch {
+    return { error: "Gemini could not be reached. Please retry.", status: 502 };
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const reason: string = body?.error?.message || "";
+    return {
+      status: res.status === 429 ? 429 : 502,
+      error:
+        res.status === 429
+          ? "Gemini's free limit is used up for now. Try again later."
+          : res.status === 403 && /has not been used|disabled/i.test(reason)
+            ? "The Gemini API isn't enabled for this Google key. Create a free key at aistudio.google.com and set GEMINI_API_KEY."
+            : res.status === 400 || res.status === 403
+              ? "Google rejected the Gemini key. Check GEMINI_API_KEY."
+              : res.status === 404
+                ? `Gemini model "${model}" wasn't found. Set GEMINI_MODEL to a current model.`
+                : "Gemini could not write a draft. Please retry.",
+    };
+  }
+  const data = await res.json();
+  const candidate = data.candidates?.[0];
+  if (!candidate || candidate.finishReason === "SAFETY")
+    return { error: "Gemini did not return a usable draft. Write this one by hand.", status: 502 };
+  const text = (candidate.content?.parts || [])
+    .map((p: { text?: string }) => p.text || "")
+    .join("");
+  return parseDraft(text, "Gemini");
+}
+
 export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;
@@ -83,9 +192,9 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Choose a saved business." }, { status: 400 });
   }
-  if (!process.env.ANTHROPIC_API_KEY)
+  if (!process.env.ANTHROPIC_API_KEY && !geminiKey())
     return NextResponse.json(
-      { error: "Add ANTHROPIC_API_KEY to enable AI drafts." },
+      { error: "Add GEMINI_API_KEY (free) or ANTHROPIC_API_KEY to enable AI drafts." },
       { status: 503 },
     );
   try {
@@ -136,52 +245,13 @@ export async function POST(req: Request) {
     }
   }
 
-  const client = new Anthropic();
-  let response;
-  try {
-    response = await client.beta.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      thinking: { type: "adaptive" },
-      output_config: {
-        effort: "medium",
-        format: { type: "json_schema", schema: SCHEMA },
-      },
-      system: SYSTEM,
-      messages: [
-        {
-          role: "user",
-          content: `Write the first email to this business using only these facts.\n\n${facts(lead, site, siteError)}`,
-        },
-      ],
-    });
-  } catch (e) {
-    const status = e instanceof Anthropic.RateLimitError ? 429 : 502;
-    const error =
-      e instanceof Anthropic.AuthenticationError
-        ? "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY."
-        : e instanceof Anthropic.RateLimitError
-          ? "Claude is rate limited right now. Try again in a minute."
-          : "Claude could not write a draft. Please retry.";
-    return NextResponse.json({ error, lead }, { status });
-  }
-  if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens")
-    return NextResponse.json(
-      { error: "Claude did not return a usable draft. Write this one by hand.", lead },
-      { status: 502 },
-    );
-  const text = response.content.find((b) => b.type === "text");
-  let draft: { subject: string; message: string; angle: string };
-  try {
-    draft = JSON.parse(text?.type === "text" ? text.text : "");
-  } catch {
-    return NextResponse.json(
-      { error: "Claude returned an unreadable draft. Please retry.", lead },
-      { status: 502 },
-    );
-  }
+  const prompt = `Write the first email to this business using only these facts.\n\n${facts(lead, site, siteError)}`;
+  const result = process.env.ANTHROPIC_API_KEY
+    ? await draftWithClaude(prompt)
+    : await draftWithGemini(prompt);
+  if ("error" in result)
+    return NextResponse.json({ error: result.error, lead }, { status: result.status });
+  const draft = result.draft;
 
   return NextResponse.json({
     ...draft,

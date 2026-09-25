@@ -14,6 +14,8 @@ export type Lead = {
   createdAt: string;
   updatedAt: string;
   performance?: { mobile: number | null; desktop: number | null; checkedAt: string };
+  outreach?: { messageId: string; subject: string; sentAt: string; requestId: string };
+  repliedAt?: string;
 };
 export type LeadInput = Pick<Lead,"name"|"address"|"email"|"phone"|"website"|"websiteStatus"|"contacted"|"notes"|"source"|"sourceId">;
 export const emptyLead: LeadInput = {name:"",address:"",email:"",phone:"",website:"",websiteStatus:"unknown",contacted:false,notes:"",source:"manual",sourceId:""};

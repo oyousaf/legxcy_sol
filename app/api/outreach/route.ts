@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
+import { mailboxConfigured, sendFromMailbox } from "@/lib/mailbox";
 // UK PECR: every marketing email must identify the sender and offer a free opt-out.
 const FOOTER =
   '\n\n--\nLegxcy Solutions · legxcysol.dev\nNot interested? Reply "no thanks" and I won\'t contact you again.';
@@ -32,53 +32,63 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const apiKey = process.env.RESEND_API_KEY,
-    from = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from)
+  if (!mailboxConfigured())
     return NextResponse.json(
-      { error: "Email sending is not configured." },
+      {
+        error:
+          "Email sending is not configured. Add OUTREACH_SMTP_USER and OUTREACH_SMTP_PASS.",
+      },
       { status: 503 },
     );
+  let lead;
   try {
-    const lead = (await getLeads()).find((l) => l.id === id);
-    if (!lead?.email)
-      return NextResponse.json(
-        { error: "Add an email address to this business first." },
-        { status: 400 },
-      );
-    const resend = new Resend(apiKey);
-    const delivery = await resend.emails.send(
-      {
-        from: `Legxcy Solutions <${from}>`,
-        to: lead.email,
-        replyTo: process.env.RESEND_TO_EMAIL || from,
-        subject: subject.trim() || "A website idea for " + lead.name,
-        text: message.trim() + FOOTER,
-      },
-      { idempotencyKey: `outreach/${id}/${requestId}` },
+    lead = (await getLeads()).find((l) => l.id === id);
+  } catch {
+    return NextResponse.json(
+      { error: "Saved businesses are unavailable. Check the database connection." },
+      { status: 503 },
     );
-    if (delivery.error)
-      return NextResponse.json(
-        { error: "Email was not accepted. Please retry." },
-        { status: 502 },
-      );
-    try {
-      const updated = await updateLead(id, { contacted: true });
-      return NextResponse.json({ lead: updated, sent: true });
-    } catch {
-      return NextResponse.json({
-        sent: true,
-        warning:
-          "Email accepted, but the contact status could not be saved. Mark this business contacted once your database is available. Do not resend.",
-      });
-    }
+  }
+  if (!lead?.email)
+    return NextResponse.json(
+      { error: "Add an email address to this business first." },
+      { status: 400 },
+    );
+  // SMTP has no idempotency keys, so a retried click must not send twice.
+  if (lead.outreach?.requestId === requestId)
+    return NextResponse.json({ lead, sent: true });
+  const finalSubject = subject.trim() || "A website idea for " + lead.name;
+  let sent;
+  try {
+    sent = await sendFromMailbox(lead.email, finalSubject, message.trim() + FOOTER);
   } catch {
     return NextResponse.json(
       {
         error:
-          "Unable to complete the send. Check the connection before retrying.",
+          "The mailbox rejected the email. Check the SMTP login and the recipient address, then retry.",
       },
-      { status: 503 },
+      { status: 502 },
     );
+  }
+  const note = sent.savedToSent
+    ? undefined
+    : "Sent, but a copy couldn't be saved to your Sent folder.";
+  try {
+    const updated = await updateLead(id, {
+      contacted: true,
+      outreach: {
+        messageId: sent.messageId,
+        subject: finalSubject,
+        sentAt: new Date().toISOString(),
+        requestId,
+      },
+    });
+    return NextResponse.json({ lead: updated, sent: true, warning: note });
+  } catch {
+    return NextResponse.json({
+      sent: true,
+      warning:
+        "Email sent, but the contact status could not be saved. Mark this business contacted once your database is available. Do not resend.",
+    });
   }
 }
