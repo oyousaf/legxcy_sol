@@ -15,9 +15,11 @@ The reader is a busy local business owner who has never heard of us. The email s
 
 Write in British English, plain text, under 110 words in the body. Open with one specific, true observation about their business or website taken only from the facts provided, and say briefly why it costs them customers. If they have no website, the observation is about what customers searching for them currently find (or don't). Offer one concrete, low-effort next step, such as a free 10-minute call or a quick mock-up of their homepage. Sign off as "Legxcy Solutions".
 
+Format the body like a real email: "Hi," (or "Hi <name>," if a person is named) on its own line, then two or three short paragraphs separated by blank lines, then the sign-off on its own line.
+
 Never invent details: no made-up statistics, reviews, visits, or claims about their site that the facts don't support. If the facts are thin, keep the observation modest. Avoid flattery clichés ("I hope this finds you well", "I was impressed by"), exclamation marks, and pushy urgency. Do not add an unsubscribe line; one is appended automatically.
 
-The subject line is under 60 characters, specific to them, lowercase apart from names, and not clickbait.`;
+The subject line is under 60 characters, specific to them, in sentence case with the business name capitalised as given, and not clickbait.`;
 
 const SCHEMA = {
   type: "object",
@@ -34,7 +36,9 @@ const SCHEMA = {
 };
 
 function facts(lead: Lead, site: SiteSnapshot | null, siteError: string) {
+  const year = new Date().getFullYear();
   const lines = [
+    `Today's date: ${new Date().toDateString()}`,
     `Business: ${lead.name}`,
     lead.address && `Location: ${lead.address}`,
     lead.notes && `My notes on them: ${lead.notes}`,
@@ -55,7 +59,7 @@ function facts(lead: Lead, site: SiteSnapshot | null, siteError: string) {
       lines.push(
         `Served over HTTPS: ${site.https ? "yes" : "no"}`,
         `Mobile viewport tag: ${site.mobileViewport ? "present" : "missing (likely not mobile-friendly)"}`,
-        `Latest copyright year in footer: ${site.copyrightYear ?? "not found"}`,
+        `Latest copyright year in footer: ${site.copyrightYear === null ? "not found" : year - site.copyrightYear >= 2 ? `${site.copyrightYear} (${year - site.copyrightYear} years out of date, suggests the site is neglected)` : `${site.copyrightYear} (current, not a problem)`}`,
         `Page title: ${site.title || "(empty)"}`,
         `Meta description: ${site.description || "(missing)"}`,
         `Homepage text excerpt:\n"""\n${site.text}\n"""`,
@@ -124,8 +128,27 @@ async function draftWithClaude(prompt: string): Promise<DraftResult> {
 const geminiKey = () =>
   process.env.GEMINI_API_KEY || process.env.GOOGLE_SERVER_API_KEY || "";
 
+// Free-tier models are often at quota or overloaded, so fall through the list
+// from best to most available.
+const GEMINI_MODELS = [
+  "gemini-flash-latest",
+  "gemini-3.7-flash",
+  "gemini-3.5-flash",
+  "gemini-flash-lite-latest",
+  "gemini-3.5-flash-lite",
+];
+
 async function draftWithGemini(prompt: string): Promise<DraftResult> {
-  const model = process.env.GEMINI_MODEL || "gemini-flash-latest";
+  const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : GEMINI_MODELS;
+  let result: DraftResult = { error: "Gemini could not write a draft.", status: 502 };
+  for (const model of models) {
+    result = await geminiOnce(model, prompt);
+    if (!("error" in result) || ![429, 503, 404].includes(result.status)) return result;
+  }
+  return result;
+}
+
+async function geminiOnce(model: string, prompt: string): Promise<DraftResult> {
   let res;
   try {
     res = await fetch(
@@ -149,24 +172,27 @@ async function draftWithGemini(prompt: string): Promise<DraftResult> {
             },
           },
         }),
-        signal: AbortSignal.timeout(50000),
+        signal: AbortSignal.timeout(20000),
       },
     );
   } catch {
-    return { error: "Gemini could not be reached. Please retry.", status: 502 };
+    // Timeouts count as "busy" so the next model gets a turn.
+    return { error: "Gemini could not be reached. Please retry.", status: 503 };
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const reason: string = body?.error?.message || "";
     return {
-      status: res.status === 429 ? 429 : 502,
+      status: [429, 503, 404].includes(res.status) ? res.status : 502,
       error:
         res.status === 429
           ? "Gemini's free limit is used up for now. Try again later."
+          : res.status === 503
+            ? "Gemini is busy right now. Try again in a minute."
           : res.status === 403 && /has not been used|disabled/i.test(reason)
             ? "The Gemini API isn't enabled for this Google key. Create a free key at aistudio.google.com and set GEMINI_API_KEY."
             : res.status === 400 || res.status === 403
-              ? "Google rejected the Gemini key. Check GEMINI_API_KEY."
+              ? `Google rejected the Gemini request: ${reason.slice(0, 160) || "check GEMINI_API_KEY"}`
               : res.status === 404
                 ? `Gemini model "${model}" wasn't found. Set GEMINI_MODEL to a current model.`
                 : "Gemini could not write a draft. Please retry.",
