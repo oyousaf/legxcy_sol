@@ -31,22 +31,22 @@ export default function Hero() {
       </div>
       <a
         className="feature-project"
-        href="https://acemotorsales.uk"
+        href="https://legxcy.uk"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="View Ace Motor Sales project (opens in a new tab)"
+        aria-label="View Legxcy project (opens in a new tab)"
       >
         <Image
-          src="/projects/ams.webp"
-          alt="Ace Motor Sales landing page"
+          src="/projects/legxcy.webp"
+          alt="Legxcy landing page"
           fill
           sizes="100vw"
           priority
         />
         <div className="feature-caption">
           <div>
-            <p>Featured work / Automotive</p>
-            <h2>Ace Motor Sales</h2>
+            <p>Featured Project</p>
+            <h2>Legxcy</h2>
           </div>
           <span className="round-arrow">
             <FiArrowUpRight />
