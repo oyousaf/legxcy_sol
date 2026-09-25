@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
+import { nextFollowUp } from "@/lib/leads/model";
 import { mailboxConfigured, sendFromMailbox } from "@/lib/mailbox";
 // UK PECR: every marketing email must identify the sender and offer a free opt-out.
 const FOOTER =
@@ -9,12 +10,14 @@ export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;
   let id: string, message: string, subject: string, requestId: string;
+  let followUp: boolean;
   try {
     const body = await req.json();
     id = body.id;
     message = body.message;
     requestId = body.requestId;
     subject = body.subject ?? "";
+    followUp = body.followUp === true;
     if (
       typeof id !== "string" ||
       typeof message !== "string" ||
@@ -55,12 +58,37 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   // SMTP has no idempotency keys, so a retried click must not send twice.
-  if (lead.outreach?.requestId === requestId)
+  if (
+    lead.outreach?.requestId === requestId ||
+    lead.followUps?.some((f) => f.requestId === requestId)
+  )
     return NextResponse.json({ lead, sent: true });
-  const finalSubject = subject.trim() || "A website idea for " + lead.name;
+  if (lead.optedOut)
+    return NextResponse.json(
+      { error: `${lead.name} asked not to be contacted again.` },
+      { status: 409 },
+    );
+  if (followUp && !nextFollowUp(lead))
+    return NextResponse.json(
+      {
+        error: lead.repliedAt
+          ? `${lead.name} has already replied, so no follow-up is needed.`
+          : "This business has no follow-up left to send.",
+      },
+      { status: 409 },
+    );
+
+  const original = followUp ? lead.outreach! : undefined;
+  const thread = original
+    ? [original.messageId, ...(lead.followUps ?? []).map((f) => f.messageId)]
+    : [];
+  const finalSubject = original
+    ? "Re: " + original.subject.replace(/^re:\s*/i, "")
+    : subject.trim() || "A website idea for " + lead.name;
+  const text = message.trim();
   let sent;
   try {
-    sent = await sendFromMailbox(lead.email, finalSubject, message.trim() + FOOTER);
+    sent = await sendFromMailbox(lead.email, finalSubject, text + FOOTER, thread);
   } catch {
     return NextResponse.json(
       {
@@ -73,22 +101,34 @@ export async function POST(req: Request) {
   const note = sent.savedToSent
     ? undefined
     : "Sent, but a copy couldn't be saved to your Sent folder.";
+  const sentAt = new Date().toISOString();
   try {
-    const updated = await updateLead(id, {
-      contacted: true,
-      outreach: {
-        messageId: sent.messageId,
-        subject: finalSubject,
-        sentAt: new Date().toISOString(),
-        requestId,
-      },
-    });
+    const updated = await updateLead(
+      id,
+      original
+        ? {
+            followUps: [
+              ...(lead.followUps ?? []),
+              { messageId: sent.messageId, sentAt, requestId, text },
+            ],
+          }
+        : {
+            contacted: true,
+            outreach: {
+              messageId: sent.messageId,
+              subject: finalSubject,
+              sentAt,
+              requestId,
+              text,
+            },
+          },
+    );
     return NextResponse.json({ lead: updated, sent: true, warning: note });
   } catch {
     return NextResponse.json({
       sent: true,
       warning:
-        "Email sent, but the contact status could not be saved. Mark this business contacted once your database is available. Do not resend.",
+        "Email sent, but it could not be recorded. Note it down and do not resend.",
     });
   }
 }

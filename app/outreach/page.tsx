@@ -20,10 +20,16 @@ import {
   FiChevronsLeft,
   FiChevronsRight,
   FiInbox,
+  FiClock,
+  FiSlash,
 } from "react-icons/fi";
 import {
   emptyLead,
+  followUpDue,
   identity,
+  FOLLOW_UP_DAYS,
+  MAX_FOLLOW_UPS,
+  nextFollowUp,
   type Lead,
   type LeadInput,
 } from "@/lib/leads/model";
@@ -72,6 +78,7 @@ const filters: Record<string, (l: Lead) => boolean> = {
   new: (l) => !l.contacted,
   contacted: (l) => l.contacted,
   awaiting: (l) => !!l.outreach && !l.repliedAt,
+  followup: (l) => followUpDue(l),
   replied: (l) => !!l.repliedAt,
   nosite: (l) => l.websiteStatus !== "present",
   low: lowScore,
@@ -121,8 +128,11 @@ export default function OutreachPage() {
   const [message, setMessage] = useState(""),
     [subject, setSubject] = useState(""),
     [draftInfo, setDraftInfo] = useState<DraftInfo | null>(null),
+    [followUpNumber, setFollowUpNumber] = useState<number | null>(null),
     [requestId, setRequestId] = useState("");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false),
+    // "Now" for due dates, fixed per load so renders stay pure.
+    [loadedAt, setLoadedAt] = useState(0);
   useEffect(() => {
     // Restore per-browser layout preferences after hydration.
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -150,6 +160,7 @@ export default function OutreachPage() {
       const data = await api<{ leads: Lead[]; storage: string }>("/api/leads");
       setLeads(data.leads);
       setStorage(data.storage);
+      setLoadedAt(Date.now());
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -328,11 +339,20 @@ export default function OutreachPage() {
       const data = await api<{ lead?: Lead; warning?: string }>(
         "/api/outreach",
         "POST",
-        { id: selectedId, message, subject, requestId },
+        {
+          id: selectedId,
+          message,
+          subject,
+          requestId,
+          followUp: followUpNumber !== null,
+        },
       );
       if (data.lead) updateInList(data.lead);
       setNotice(
-        data.warning || "Email accepted and business marked contacted.",
+        data.warning ||
+          (followUpNumber
+            ? `Follow-up ${followUpNumber} sent in the same thread.`
+            : "Email sent and business marked contacted."),
       );
       setPanel(null);
     } catch (e) {
@@ -342,6 +362,8 @@ export default function OutreachPage() {
     }
   }
   function compose(lead: Lead) {
+    setSelectedId(lead.id);
+    setFollowUpNumber(null);
     setSubject(`A website idea for ${lead.name}`);
     setMessage(
       `Hi,\n\nI came across ${lead.name} and wanted to introduce Legxcy Solutions. We design and develop websites for local businesses.\n\nWould you be open to a short conversation about your website?\n\nBest regards,\nLegxcy Solutions`,
@@ -351,21 +373,44 @@ export default function OutreachPage() {
     setFormError("");
     setPanel("compose");
   }
-  async function aiDraft(lead: Lead) {
-    setBusy("draft");
+  function composeFollowUp(lead: Lead) {
+    const next = nextFollowUp(lead);
+    if (!next || !lead.outreach) return;
+    setSelectedId(lead.id);
+    setSubject("Re: " + lead.outreach.subject);
+    setMessage(
+      next.number === MAX_FOLLOW_UPS
+        ? "Hi,\n\nI won't keep filling your inbox, so this is my last note. If a faster, easier-to-find website is ever on your list, I'm happy to help.\n\nLegxcy Solutions"
+        : "Hi,\n\nA quick follow-up on my note below. I'm happy to put together a free homepage mock-up so you can see what's possible, no strings attached.\n\nLegxcy Solutions",
+    );
+    setFollowUpNumber(next.number);
+    setDraftInfo(null);
+    setRequestId(crypto.randomUUID());
     setFormError("");
+    setPanel("compose");
+  }
+  async function aiDraft(lead: Lead, followUp = false) {
+    setBusy(followUp ? `draft:${lead.id}` : "draft");
+    setFormError("");
+    setError("");
     try {
       const res = await fetch("/api/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: lead.id }),
+        body: JSON.stringify({ id: lead.id, followUp }),
         cache: "no-store",
       });
       const data = await res.json();
       // The draft route may have saved an email it found, even on failure.
       if (data.lead) updateInList(data.lead);
       if (!res.ok) throw Error(data.error || "Draft failed. Please retry.");
-      setSubject(data.subject);
+      setSelectedId(lead.id);
+      setFollowUpNumber(followUp ? (nextFollowUp(lead)?.number ?? 1) : null);
+      setSubject(
+        followUp && lead.outreach
+          ? "Re: " + lead.outreach.subject
+          : data.subject,
+      );
       setMessage(data.message);
       setDraftInfo({
         angle: data.angle,
@@ -377,14 +422,17 @@ export default function OutreachPage() {
       setRequestId(crypto.randomUUID());
       setPanel("compose");
     } catch (e) {
-      setFormError((e as Error).message);
+      // Follow-up drafts start from the list, where no dialog is open.
+      if (followUp) setError((e as Error).message);
+      else setFormError((e as Error).message);
     } finally {
       setBusy("");
     }
   }
-  async function checkReplies() {
-    setBusy("replies");
+  async function checkReplies(silent = false) {
+    if (!silent) setBusy("replies");
     setError("");
+    store("outreach:repliesCheckedAt", String(Date.now()));
     try {
       const data = await api<{ checked: number; updated: Lead[] }>(
         "/api/replies",
@@ -392,17 +440,57 @@ export default function OutreachPage() {
         {},
       );
       data.updated.forEach(updateInList);
+      if (data.updated.length || !silent)
+        setNotice(
+          data.updated.length
+            ? `${data.updated.length} new ${data.updated.length === 1 ? "reply" : "replies"}: ${data.updated.map((l) => l.name + (l.optedOut ? " (asked not to be contacted)" : "")).join(", ")}.`
+            : `No new replies from ${data.checked} emailed ${data.checked === 1 ? "business" : "businesses"}.`,
+        );
+    } catch (e) {
+      if (!silent) setError((e as Error).message);
+    } finally {
+      if (!silent) setBusy("");
+    }
+  }
+  // Check the inbox when the dashboard opens (at most every 15 minutes), so
+  // anyone who replied drops out of the follow-up list before you see it.
+  const autoChecked = useRef(false);
+  useEffect(() => {
+    if (loading || autoChecked.current) return;
+    autoChecked.current = true;
+    const last = Number(stored("outreach:repliesCheckedAt") || 0);
+    if (
+      Date.now() - last > 15 * 60e3 &&
+      leads.some((l) => l.outreach && !l.repliedAt)
+    )
+      // Syncing with the mailbox, like the initial load above.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void checkReplies(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+  async function setOptedOut(lead: Lead, optedOut: boolean) {
+    setBusy("optout");
+    setFormError("");
+    try {
+      const data = await api<{ lead: Lead }>("/api/leads", "PATCH", {
+        id: lead.id,
+        optedOut,
+      });
+      updateInList(data.lead);
       setNotice(
-        data.updated.length
-          ? `${data.updated.length} new ${data.updated.length === 1 ? "reply" : "replies"}: ${data.updated.map((l) => l.name).join(", ")}.`
-          : `No new replies from ${data.checked} emailed ${data.checked === 1 ? "business" : "businesses"}.`,
+        optedOut
+          ? `${lead.name} marked do not contact.`
+          : `${lead.name} can be contacted again.`,
       );
     } catch (e) {
-      setError((e as Error).message);
+      setFormError((e as Error).message);
     } finally {
       setBusy("");
     }
   }
+  const dueFollowUps = loadedAt
+    ? leads.filter((l) => followUpDue(l, loadedAt))
+    : [];
   async function deleteBusiness(lead: Lead) {
     if (!window.confirm(`Delete ${lead.name}? This can't be undone.`)) return;
     setBusy("delete");
@@ -548,6 +636,67 @@ export default function OutreachPage() {
           )}
           {view === "leads" ? (
             <>
+              {dueFollowUps.length > 0 && (
+                <section className="followups" aria-label="Follow-ups due">
+                  <div className="followups-head">
+                    <h2>
+                      <FiClock /> Follow-ups due{" "}
+                      <span>{dueFollowUps.length}</span>
+                    </h2>
+                    <p>
+                      No reply after {FOLLOW_UP_DAYS} days. Each follow-up is
+                      sent in the same email thread, and anyone who replies
+                      drops off this list.
+                    </p>
+                  </div>
+                  {dueFollowUps.map((lead) => {
+                    const next = nextFollowUp(lead)!;
+                    const last =
+                      lead.followUps?.at(-1)?.sentAt ?? lead.outreach!.sentAt;
+                    const days = Math.floor(
+                      (loadedAt - Date.parse(last)) / 864e5,
+                    );
+                    return (
+                      <div className="followup-row" key={lead.id}>
+                        <button
+                          className="business-name"
+                          onClick={() => edit(lead)}
+                        >
+                          <span className="business-avatar">
+                            {lead.name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span>
+                            <strong>{lead.name}</strong>
+                            <small>
+                              Follow-up {next.number} of {MAX_FOLLOW_UPS} ·
+                              last emailed {days} days ago
+                            </small>
+                          </span>
+                        </button>
+                        <div className="followup-actions">
+                          <button
+                            className="btn btn-small btn-primary"
+                            disabled={!!busy}
+                            onClick={() => void aiDraft(lead, true)}
+                          >
+                            <FiZap />
+                            {busy === `draft:${lead.id}`
+                              ? "Drafting…"
+                              : "AI follow-up"}
+                          </button>
+                          <button
+                            className="btn btn-small"
+                            disabled={!!busy}
+                            onClick={() => composeFollowUp(lead)}
+                          >
+                            <FiMail /> Write
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </section>
+              )}
               <div className="metric-grid">
                 {[
                   ["In your workspace", leads.length, "Businesses saved"],
@@ -639,6 +788,7 @@ export default function OutreachPage() {
                     <option value="new">Not contacted</option>
                     <option value="contacted">Contacted</option>
                     <option value="awaiting">Emailed, awaiting reply</option>
+                    <option value="followup">Follow-up due</option>
                     <option value="replied">Replied</option>
                   </select>
                   <button
@@ -776,6 +926,20 @@ export default function OutreachPage() {
                                   <FiInbox /> Replied
                                 </span>
                               )}
+                              {lead.optedOut ? (
+                                <span className="badge amber replied-badge">
+                                  <FiSlash /> Do not contact
+                                </span>
+                              ) : followUpDue(lead) ? (
+                                <span className="badge amber replied-badge">
+                                  <FiClock /> Follow-up due
+                                </span>
+                              ) : lead.followUps?.length && !lead.repliedAt ? (
+                                <span className="badge replied-badge">
+                                  {lead.followUps.length} follow-up
+                                  {lead.followUps.length > 1 ? "s" : ""} sent
+                                </span>
+                              ) : null}
                               <button
                                 className={`badge status-button ${lead.contacted ? "green" : ""}`}
                                 disabled={!!busy}
@@ -1031,7 +1195,9 @@ export default function OutreachPage() {
                 ? "Business details"
                 : panel === "import"
                   ? "Bring your list with you."
-                  : "Start a conversation"
+                  : followUpNumber
+                    ? `Follow-up ${followUpNumber} of ${MAX_FOLLOW_UPS}`
+                    : "Start a conversation"
           }
           onClose={close}
         >
@@ -1126,7 +1292,13 @@ export default function OutreachPage() {
                   </div>
                 </div>
               )}
-              {!draftInfo?.limitedCompany && (
+              {selected?.optedOut && (
+                <div className="work-alert" role="alert">
+                  {selected.name} asked not to be contacted again, so sending
+                  is blocked.
+                </div>
+              )}
+              {followUpNumber === null && !draftInfo?.limitedCompany && (
                 <p className="pecr-note">
                   Couldn’t confirm this is a limited company. If it’s a sole
                   trader or partnership, UK PECR rules require their consent
@@ -1138,6 +1310,12 @@ export default function OutreachPage() {
                 <input
                   value={subject}
                   maxLength={150}
+                  readOnly={followUpNumber !== null}
+                  title={
+                    followUpNumber !== null
+                      ? "Follow-ups reply in the original thread"
+                      : undefined
+                  }
                   onChange={(e) => {
                     setSubject(e.target.value);
                     setRequestId(crypto.randomUUID());
@@ -1155,10 +1333,36 @@ export default function OutreachPage() {
                   }}
                 />
               </label>
+              {followUpNumber !== null && selected?.outreach && (
+                <details className="thread-history">
+                  <summary>
+                    Earlier emails in this thread (
+                    {1 + (selected.followUps?.length ?? 0)})
+                  </summary>
+                  {[
+                    {
+                      sentAt: selected.outreach.sentAt,
+                      text: selected.outreach.text,
+                    },
+                    ...(selected.followUps ?? []),
+                  ].map((m, i) => (
+                    <div key={i}>
+                      <small>
+                        {i === 0 ? "First email" : `Follow-up ${i}`} ·{" "}
+                        {new Date(m.sentAt).toLocaleDateString()}
+                      </small>
+                      <p>{m.text || "(text not recorded)"}</p>
+                    </div>
+                  ))}
+                </details>
+              )}
               <p className="dialog-copy">
                 Sent from your own mailbox, with a copy in your Sent folder. A
                 signature and “reply no thanks to opt out” line are added
-                automatically, and the business is marked contacted once sent.
+                automatically
+                {followUpNumber !== null
+                  ? ", and it threads under your first email."
+                  : ", and the business is marked contacted once sent."}
               </p>
               <div className="dialog-actions">
                 <button className="btn" onClick={close} disabled={!!busy}>
@@ -1166,7 +1370,12 @@ export default function OutreachPage() {
                 </button>
                 <button
                   className="btn btn-primary"
-                  disabled={!!busy || !message.trim() || !selected?.email}
+                  disabled={
+                    !!busy ||
+                    !message.trim() ||
+                    !selected?.email ||
+                    !!selected?.optedOut
+                  }
                   onClick={() => void send()}
                 >
                   <FiMail />
@@ -1331,6 +1540,34 @@ export default function OutreachPage() {
                       !selected.performance &&
                       " Run a performance check first for a sharper draft."}
                   </p>
+                  {selected.outreach && (
+                    <p className="thread-status">
+                      Emailed{" "}
+                      {new Date(selected.outreach.sentAt).toLocaleDateString()}
+                      {selected.followUps?.length
+                        ? ` · ${selected.followUps.length} follow-up${selected.followUps.length > 1 ? "s" : ""} sent`
+                        : ""}
+                      {selected.repliedAt
+                        ? ` · replied ${new Date(selected.repliedAt).toLocaleDateString()}`
+                        : (() => {
+                            const next = nextFollowUp(selected);
+                            return next
+                              ? ` · follow-up ${next.number} due ${next.dueAt.toLocaleDateString()}`
+                              : "";
+                          })()}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="text-button"
+                    disabled={!!busy}
+                    onClick={() => void setOptedOut(selected, !selected.optedOut)}
+                  >
+                    <FiSlash />
+                    {selected.optedOut
+                      ? "Allow contacting again"
+                      : "Mark do not contact"}
+                  </button>
                 </div>
               )}
               <div className="dialog-actions">

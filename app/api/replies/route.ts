@@ -4,7 +4,7 @@ import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
 import { findReplies, mailboxConfigured } from "@/lib/mailbox";
 export const maxDuration = 60;
-const limiter = new RateLimiterMemory({ points: 20, duration: 3600 });
+const limiter = new RateLimiterMemory({ points: 60, duration: 3600 });
 export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;
@@ -35,8 +35,12 @@ export async function POST(req: Request) {
   try {
     replies = await findReplies(
       waiting.map((l) => ({
+        key: l.id,
         email: l.email,
-        messageId: l.outreach!.messageId,
+        messageIds: [
+          l.outreach!.messageId,
+          ...(l.followUps ?? []).map((f) => f.messageId),
+        ],
         sentAt: l.outreach!.sentAt,
       })),
     );
@@ -49,8 +53,14 @@ export async function POST(req: Request) {
   const updated = [];
   try {
     for (const lead of waiting) {
-      const at = replies.get(lead.outreach!.messageId);
-      if (at) updated.push(await updateLead(lead.id, { repliedAt: at }));
+      const reply = replies.get(lead.id);
+      if (reply)
+        updated.push(
+          await updateLead(lead.id, {
+            repliedAt: reply.at,
+            ...(reply.optOut && { optedOut: true }),
+          }),
+        );
     }
   } catch {
     return NextResponse.json(

@@ -66,6 +66,8 @@ export async function PATCH(req: Request) {
       throw Error("Invalid business ID.");
     if (Object.keys(body).length === 2 && typeof body.contacted === "boolean")
       patch = { contacted: body.contacted };
+    else if (Object.keys(body).length === 2 && typeof body.optedOut === "boolean")
+      patch = { optedOut: body.optedOut };
     else {
       const { contacted: ignored, ...fields } = validateLead(body.lead);
       void ignored;

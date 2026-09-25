@@ -66,3 +66,19 @@
 .toolbar-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .replied-badge { display: flex; width: fit-content; margin-bottom: 8px; }
 .discovery-controls .town-input { margin-top: 8px; }
+
+/* Follow-ups */
+.followups { border: 1px solid #e4bf8340; background: #e4bf8308; border-radius: 14px; padding: 20px; margin-bottom: 28px; }
+.followups-head h2 { display: flex; align-items: center; gap: 9px; font-size: 1.1rem; font-weight: 500; letter-spacing: -.02em; margin: 0; color: #e4bf83; }
+.followups-head h2 span { background: #e4bf8325; border-radius: 5px; padding: 1px 7px; font-size: .8rem; }
+.followups-head p { color: var(--muted); font-size: .85rem; line-height: 1.6; margin: 8px 0 12px; }
+.followup-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.followup-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.thread-history { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: .85rem; }
+.thread-history summary { cursor: pointer; color: var(--muted); }
+.thread-history div { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+.thread-history small { color: var(--muted); }
+.thread-history p { white-space: pre-wrap; line-height: 1.6; margin: 6px 0 0; color: #c9dbd0; }
+.thread-status { color: var(--accent-green) !important; }
+.field input[readonly] { opacity: .7; }
+.work-dialog { margin: auto; } /* Tailwind preflight zeroes the margin that centres <dialog>. */

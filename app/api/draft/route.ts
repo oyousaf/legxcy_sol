@@ -4,7 +4,7 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
 import { contactEmails, siteSnapshot, type SiteSnapshot } from "@/lib/leads/siteSnapshot";
-import type { Lead } from "@/lib/leads/model";
+import { MAX_FOLLOW_UPS, nextFollowUp, type Lead } from "@/lib/leads/model";
 
 export const maxDuration = 60;
 const limiter = new RateLimiterMemory({ points: 30, duration: 3600 });
@@ -20,6 +20,14 @@ Format the body like a real email: "Hi," (or "Hi <name>," if a person is named) 
 Never invent details: no made-up statistics, reviews, visits, or claims about their site that the facts don't support. If the facts are thin, keep the observation modest. Avoid flattery clichés ("I hope this finds you well", "I was impressed by"), exclamation marks, and pushy urgency. Do not add an unsubscribe line; one is appended automatically.
 
 The subject line is under 60 characters, specific to them, in sentence case with the business name capitalised as given, and not clickbait.`;
+
+const FOLLOW_UP_SYSTEM = `You write short follow-up emails for Legxcy Solutions, a small web design and development studio based in West Yorkshire (legxcysol.dev). It is sent as a reply in the same thread as our earlier email, which the business owner hasn't answered.
+
+Write in British English, plain text, under 70 words in the body. Don't repeat the first email or apologise for following up, and avoid "just bumping this", "circling back" and guilt-tripping. Add one new, genuinely useful angle taken only from the facts provided: a different small problem, a quick practical tip they could use even without us, or an easier next step. If this is the last follow-up, say so kindly and close the loop, leaving the door open. Never invent details.
+
+Format: "Hi," on its own line, one or two short paragraphs, then "Legxcy Solutions" on its own line. Do not add an unsubscribe line; one is appended automatically.
+
+For the subject, repeat the original subject (it is replaced with "Re: <original>" anyway).`;
 
 const SCHEMA = {
   type: "object",
@@ -89,7 +97,7 @@ function parseDraft(text: string, provider: string): DraftResult {
   return { error: `${provider} returned an unreadable draft. Please retry.`, status: 502 };
 }
 
-async function draftWithClaude(prompt: string): Promise<DraftResult> {
+async function draftWithClaude(system: string, prompt: string): Promise<DraftResult> {
   const client = new Anthropic();
   let response;
   try {
@@ -103,7 +111,7 @@ async function draftWithClaude(prompt: string): Promise<DraftResult> {
         effort: "medium",
         format: { type: "json_schema", schema: SCHEMA },
       },
-      system: SYSTEM,
+      system,
       messages: [{ role: "user", content: prompt }],
     });
   } catch (e) {
@@ -138,17 +146,17 @@ const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
 ];
 
-async function draftWithGemini(prompt: string): Promise<DraftResult> {
+async function draftWithGemini(system: string, prompt: string): Promise<DraftResult> {
   const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : GEMINI_MODELS;
   let result: DraftResult = { error: "Gemini could not write a draft.", status: 502 };
   for (const model of models) {
-    result = await geminiOnce(model, prompt);
+    result = await geminiOnce(model, system, prompt);
     if (!("error" in result) || ![429, 503, 404].includes(result.status)) return result;
   }
   return result;
 }
 
-async function geminiOnce(model: string, prompt: string): Promise<DraftResult> {
+async function geminiOnce(model: string, system: string, prompt: string): Promise<DraftResult> {
   let res;
   try {
     res = await fetch(
@@ -157,7 +165,7 @@ async function geminiOnce(model: string, prompt: string): Promise<DraftResult> {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey() },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
+          systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
             responseMimeType: "application/json",
@@ -212,8 +220,11 @@ export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;
   let id: string;
+  let followUp: boolean;
   try {
-    id = (await req.json()).id;
+    const body = await req.json();
+    id = body.id;
+    followUp = body.followUp === true;
     if (typeof id !== "string" || !/^[a-f0-9]{32}$/.test(id)) throw Error();
   } catch {
     return NextResponse.json({ error: "Choose a saved business." }, { status: 400 });
@@ -271,10 +282,26 @@ export async function POST(req: Request) {
     }
   }
 
-  const prompt = `Write the first email to this business using only these facts.\n\n${facts(lead, site, siteError)}`;
+  const next = followUp ? nextFollowUp(lead) : null;
+  if (followUp && (!next || !lead.outreach))
+    return NextResponse.json(
+      { error: "This business has no follow-up left to send.", lead },
+      { status: 409 },
+    );
+  const system = next ? FOLLOW_UP_SYSTEM : SYSTEM;
+  const prompt = next
+    ? [
+        `Write follow-up ${next.number} of ${MAX_FOLLOW_UPS}${next.number === MAX_FOLLOW_UPS ? " (the last one)" : ""}. They haven't replied.`,
+        `Our first email, sent ${new Date(lead.outreach!.sentAt).toDateString()}:\n"""\n${lead.outreach!.text || "(text not recorded)"}\n"""`,
+        ...(lead.followUps ?? []).map(
+          (f, i) => `Follow-up ${i + 1}, sent ${new Date(f.sentAt).toDateString()}:\n"""\n${f.text}\n"""`,
+        ),
+        `Facts about the business:\n${facts(lead, site, siteError)}`,
+      ].join("\n\n")
+    : `Write the first email to this business using only these facts.\n\n${facts(lead, site, siteError)}`;
   const result = process.env.ANTHROPIC_API_KEY
-    ? await draftWithClaude(prompt)
-    : await draftWithGemini(prompt);
+    ? await draftWithClaude(system, prompt)
+    : await draftWithGemini(system, prompt);
   if ("error" in result)
     return NextResponse.json({ error: result.error, lead }, { status: result.status });
   const draft = result.draft;

@@ -14,8 +14,10 @@ export type Lead = {
   createdAt: string;
   updatedAt: string;
   performance?: { mobile: number | null; desktop: number | null; checkedAt: string };
-  outreach?: { messageId: string; subject: string; sentAt: string; requestId: string };
+  outreach?: { messageId: string; subject: string; sentAt: string; requestId: string; text?: string };
+  followUps?: { messageId: string; sentAt: string; requestId: string; text: string }[];
   repliedAt?: string;
+  optedOut?: boolean;
 };
 export type LeadInput = Pick<Lead,"name"|"address"|"email"|"phone"|"website"|"websiteStatus"|"contacted"|"notes"|"source"|"sourceId">;
 export const emptyLead: LeadInput = {name:"",address:"",email:"",phone:"",website:"",websiteStatus:"unknown",contacted:false,notes:"",source:"manual",sourceId:""};
@@ -44,3 +46,18 @@ export function identity(lead: LeadInput): string {
   // Name + location avoids merging branches that share a website.
   return `${lead.name.toLowerCase().replace(/\s+/g,' ')}|${lead.address.toLowerCase().replace(/\s+/g,' ')}|${lead.address?'':lead.website||lead.email.toLowerCase()}`;
 }
+
+export const FOLLOW_UP_DAYS = 4;
+export const MAX_FOLLOW_UPS = 2;
+/** When the next follow-up is due, or null if the thread is finished. */
+export function nextFollowUp(lead: Lead): { number: number; dueAt: Date } | null {
+  if (!lead.outreach || lead.repliedAt || lead.optedOut) return null;
+  const sent = lead.followUps ?? [];
+  if (sent.length >= MAX_FOLLOW_UPS) return null;
+  const last = sent.at(-1)?.sentAt ?? lead.outreach.sentAt;
+  return { number: sent.length + 1, dueAt: new Date(Date.parse(last) + FOLLOW_UP_DAYS * 864e5) };
+}
+export const followUpDue = (lead: Lead, now = Date.now()) => {
+  const next = nextFollowUp(lead);
+  return !!next && next.dueAt.getTime() <= now;
+};
