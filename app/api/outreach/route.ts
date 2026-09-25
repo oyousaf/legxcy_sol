@@ -114,6 +114,7 @@ export async function POST(req: Request) {
           }
         : {
             contacted: true,
+            queuedDraft: null,
             outreach: {
               messageId: sent.messageId,
               subject: finalSubject,

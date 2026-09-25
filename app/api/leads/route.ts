@@ -68,6 +68,18 @@ export async function PATCH(req: Request) {
       patch = { contacted: body.contacted };
     else if (Object.keys(body).length === 2 && typeof body.optedOut === "boolean")
       patch = { optedOut: body.optedOut };
+    else if (Object.keys(body).length === 2 && typeof body.queueSkipped === "boolean")
+      // Skipping drops any prepared draft too.
+      patch = body.queueSkipped
+        ? { queueSkipped: true, queuedDraft: null }
+        : { queueSkipped: false };
+    else if (Object.keys(body).length === 2 && typeof body.verifiedLimited === "boolean")
+      // Confirmed by hand; clearing it lets Companies House check again.
+      patch = {
+        companyCheck: body.verifiedLimited
+          ? { status: "manual" as const, checkedAt: new Date().toISOString() }
+          : null,
+      };
     else {
       const { contacted: ignored, ...fields } = validateLead(body.lead);
       void ignored;

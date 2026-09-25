@@ -22,6 +22,9 @@ import {
   FiInbox,
   FiClock,
   FiSlash,
+  FiSend,
+  FiSettings,
+  FiShield,
 } from "react-icons/fi";
 import {
   emptyLead,
@@ -30,14 +33,16 @@ import {
   FOLLOW_UP_DAYS,
   MAX_FOLLOW_UPS,
   nextFollowUp,
+  verifiedCompany,
   type Lead,
   type LeadInput,
 } from "@/lib/leads/model";
 import { makeCsv, parseCsv } from "@/lib/leads/csv";
 import { businessTypes, towns } from "@/lib/leads/categories";
+import type { QueueSettings } from "@/lib/leads/store";
 import Dialog from "./components/Dialog";
 import "./outreach.css";
-type Panel = "add" | "import" | "edit" | "compose" | null;
+type Panel = "add" | "import" | "edit" | "compose" | "queue" | null;
 async function api<T>(url: string, method = "GET", body?: unknown): Promise<T> {
   const res = await fetch(url, {
     method,
@@ -98,6 +103,15 @@ function store(key: string, value: string) {
     localStorage.setItem(key, value);
   } catch {}
 }
+function companyLabel(l: Lead) {
+  const c = l.companyCheck;
+  if (!c) return "Not checked yet";
+  if (c.status === "manual") return "Limited company (confirmed by you)";
+  if (c.status === "limited") return `Limited company · ${c.name} (${c.number})`;
+  if (c.status === "not-limited")
+    return `Registered but not an active limited company · ${c.name}`;
+  return "Not found on Companies House";
+}
 function scoreClass(n: number | null) {
   return n === null ? "" : n < LOW_SCORE ? "amber" : n >= 90 ? "green" : "";
 }
@@ -133,6 +147,13 @@ export default function OutreachPage() {
   const [collapsed, setCollapsed] = useState(false),
     // "Now" for due dates, fixed per load so renders stay pure.
     [loadedAt, setLoadedAt] = useState(0);
+  const [queueSettings, setQueueSettings] = useState<QueueSettings | null>(null),
+    [companiesHouse, setCompaniesHouse] = useState(true),
+    [preparing, setPreparing] = useState<{
+      done: number;
+      total: number;
+      label: string;
+    } | null>(null);
   useEffect(() => {
     // Restore per-browser layout preferences after hydration.
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -491,6 +512,169 @@ export default function OutreachPage() {
   const dueFollowUps = loadedAt
     ? leads.filter((l) => followUpDue(l, loadedAt))
     : [];
+
+  // Ready-to-send queue: the server picks verified limited companies, then
+  // each is scored (if it has a site) and drafted here, one at a time, so no
+  // single request runs past the hosting time limit.
+  const ready = leads.filter((l) => l.queuedDraft);
+  async function loadQueueSettings() {
+    try {
+      const data = await api<{ settings: QueueSettings; companiesHouse: boolean }>(
+        "/api/queue",
+      );
+      setQueueSettings(data.settings);
+      setCompaniesHouse(data.companiesHouse);
+      return data;
+    } catch {
+      return null;
+    }
+  }
+  async function prepareQueue() {
+    if (preparing) return;
+    setError("");
+    store("outreach:queuePreparedOn", new Date().toDateString());
+    setPreparing({ done: 0, total: 0, label: "Finding verified limited companies…" });
+    const skipped: string[] = [];
+    let drafted = 0;
+    try {
+      const pick = await api<{ ids: string[]; searched: string[]; warning?: string }>(
+        "/api/queue",
+        "POST",
+        {},
+      );
+      const fresh = await api<{ leads: Lead[] }>("/api/leads");
+      setLeads(fresh.leads);
+      const byId = new Map(fresh.leads.map((l) => [l.id, l]));
+      for (const [i, id] of pick.ids.entries()) {
+        let lead = byId.get(id);
+        if (!lead) continue;
+        setPreparing({ done: i, total: pick.ids.length, label: `Drafting for ${lead.name}…` });
+        if (lead.website && !lead.performance) {
+          try {
+            lead = (await api<{ lead: Lead }>("/api/performance", "POST", { id })).lead;
+            updateInList(lead);
+          } catch {}
+          const p = lead.performance;
+          if (p && [p.mobile, p.desktop].every((n) => n === null || n >= LOW_SCORE)) {
+            skipped.push(`${lead.name} (site already fast)`);
+            continue;
+          }
+        }
+        const res = await fetch("/api/draft", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, queue: true }),
+          cache: "no-store",
+        });
+        const data = await res.json();
+        if (data.lead) updateInList(data.lead);
+        if (res.ok) drafted++;
+        else skipped.push(`${lead.name} (${data.error || "draft failed"})`);
+      }
+      const where = pick.searched.length ? ` Searched ${pick.searched.join(" and ")}.` : "";
+      setNotice(
+        (pick.ids.length
+          ? `${drafted} ${drafted === 1 ? "email" : "emails"} ready to review.`
+          : "No new verified limited companies to queue right now.") +
+          where +
+          (skipped.length ? ` Skipped: ${skipped.join("; ")}.` : "") +
+          (pick.warning ? ` ${pick.warning}` : ""),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPreparing(null);
+    }
+  }
+  async function sendQueued(lead: Lead) {
+    if (!lead.queuedDraft) return;
+    setBusy(`send:${lead.id}`);
+    setError("");
+    try {
+      const data = await api<{ lead?: Lead; warning?: string }>("/api/outreach", "POST", {
+        id: lead.id,
+        subject: lead.queuedDraft.subject,
+        message: lead.queuedDraft.message,
+        requestId: crypto.randomUUID(),
+      });
+      if (data.lead) updateInList(data.lead);
+      setNotice(data.warning || `Sent to ${lead.name}.`);
+      return true;
+    } catch (e) {
+      setError(`${lead.name}: ${(e as Error).message}`);
+      return false;
+    } finally {
+      setBusy("");
+    }
+  }
+  async function sendAllQueued() {
+    if (!window.confirm(`Send all ${ready.length} emails now?`)) return;
+    let sent = 0;
+    for (const lead of ready) if (await sendQueued(lead)) sent++;
+    setNotice(`${sent} of ${ready.length} emails sent.`);
+  }
+  function reviewQueued(lead: Lead) {
+    if (!lead.queuedDraft) return;
+    setSelectedId(lead.id);
+    setFollowUpNumber(null);
+    setSubject(lead.queuedDraft.subject);
+    setMessage(lead.queuedDraft.message);
+    setDraftInfo({ angle: lead.queuedDraft.angle, limitedCompany: true, siteError: "" });
+    setRequestId(crypto.randomUUID());
+    setFormError("");
+    setPanel("compose");
+  }
+  async function patchLead(lead: Lead, patch: Record<string, boolean>, done: string) {
+    setBusy("patch");
+    setError("");
+    setFormError("");
+    try {
+      const data = await api<{ lead: Lead }>("/api/leads", "PATCH", { id: lead.id, ...patch });
+      updateInList(data.lead);
+      setNotice(done);
+    } catch (e) {
+      (panel ? setFormError : setError)((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function saveQueueSettingsForm(form: HTMLFormElement) {
+    const f = new FormData(form);
+    const towns = String(f.get("towns") || "")
+      .split(/[\n,]/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    setBusy("save");
+    setFormError("");
+    try {
+      const data = await api<{ settings: QueueSettings }>("/api/queue", "PUT", {
+        towns,
+        dailyCount: Number(f.get("dailyCount")),
+        category: f.get("category"),
+      });
+      setQueueSettings(data.settings);
+      setNotice("Queue settings saved.");
+      setPanel(null);
+    } catch (e) {
+      setFormError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  // Prepare the day's queue the first time the dashboard opens each day.
+  const queueStarted = useRef(false);
+  useEffect(() => {
+    if (loading || queueStarted.current) return;
+    queueStarted.current = true;
+    void loadQueueSettings().then((data) => {
+      if (
+        data?.companiesHouse &&
+        stored("outreach:queuePreparedOn") !== new Date().toDateString()
+      )
+        void prepareQueue();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
   async function deleteBusiness(lead: Lead) {
     if (!window.confirm(`Delete ${lead.name}? This can't be undone.`)) return;
     setBusy("delete");
@@ -636,6 +820,103 @@ export default function OutreachPage() {
           )}
           {view === "leads" ? (
             <>
+              <section className="queue" aria-label="Ready to send">
+                <div className="queue-head">
+                  <div>
+                    <h2>
+                      <FiSend /> Ready to send <span>{ready.length}</span>
+                    </h2>
+                    <p>
+                      {companiesHouse
+                        ? `Verified limited companies with no website or a slow one, drafted by AI. Up to ${queueSettings?.dailyCount ?? 5} a day, searching ${queueSettings?.towns.join(", ") ?? "your towns"} in turn.`
+                        : "Add COMPANIES_HOUSE_API_KEY to start the queue. Only businesses confirmed as limited companies are queued, to keep within UK PECR rules."}
+                    </p>
+                  </div>
+                  <div className="queue-actions">
+                    <button
+                      className="btn btn-small"
+                      disabled={!!preparing || !queueSettings}
+                      onClick={() => {
+                        setFormError("");
+                        setPanel("queue");
+                      }}
+                    >
+                      <FiSettings /> Settings
+                    </button>
+                    <button
+                      className="btn btn-small"
+                      disabled={!!preparing || !!busy || !companiesHouse}
+                      onClick={() => void prepareQueue()}
+                    >
+                      <FiRefreshCw /> Prepare more
+                    </button>
+                    {ready.length > 1 && (
+                      <button
+                        className="btn btn-small btn-primary"
+                        disabled={!!preparing || !!busy}
+                        onClick={() => void sendAllQueued()}
+                      >
+                        <FiSend /> Send all
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {preparing && (
+                  <p className="queue-progress" role="status">
+                    <span className="status-dot" />
+                    {preparing.label}
+                    {preparing.total > 0 &&
+                      ` (${preparing.done + 1} of ${preparing.total})`}
+                  </p>
+                )}
+                {ready.map((lead) => (
+                  <div className="queue-row" key={lead.id}>
+                    <div className="queue-info">
+                      <strong>{lead.name}</strong>
+                      <small>
+                        {lead.email} · {lead.queuedDraft!.angle}
+                      </small>
+                      <p>
+                        <b>{lead.queuedDraft!.subject}</b> —{" "}
+                        {lead.queuedDraft!.message
+                          .replace(/^hi[^\n]*\n+/i, "")
+                          .slice(0, 140)}
+                        …
+                      </p>
+                    </div>
+                    <div className="followup-actions">
+                      <button
+                        className="btn btn-small btn-primary"
+                        disabled={!!busy || !!preparing}
+                        onClick={() => void sendQueued(lead)}
+                      >
+                        <FiMail />
+                        {busy === `send:${lead.id}` ? "Sending…" : "Send"}
+                      </button>
+                      <button
+                        className="btn btn-small"
+                        disabled={!!busy}
+                        onClick={() => reviewQueued(lead)}
+                      >
+                        Review
+                      </button>
+                      <button
+                        className="btn btn-small"
+                        disabled={!!busy}
+                        onClick={() =>
+                          void patchLead(
+                            lead,
+                            { queueSkipped: true },
+                            `${lead.name} skipped. It won't be queued again.`,
+                          )
+                        }
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </section>
               {dueFollowUps.length > 0 && (
                 <section className="followups" aria-label="Follow-ups due">
                   <div className="followups-head">
@@ -1193,7 +1474,9 @@ export default function OutreachPage() {
               ? "Add a business"
               : panel === "edit"
                 ? "Business details"
-                : panel === "import"
+                : panel === "queue"
+                  ? "Ready to send settings"
+                  : panel === "import"
                   ? "Bring your list with you."
                   : followUpNumber
                     ? `Follow-up ${followUpNumber} of ${MAX_FOLLOW_UPS}`
@@ -1206,7 +1489,72 @@ export default function OutreachPage() {
               {formError}
             </div>
           )}
-          {panel === "import" ? (
+          {panel === "queue" && queueSettings ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void saveQueueSettingsForm(e.currentTarget);
+              }}
+            >
+              <p className="dialog-copy">
+                Each day the queue drafts emails for saved businesses first.
+                When those run out, it searches the next town below and carries
+                on from there the following day. Nobody is queued twice.
+              </p>
+              <label className="field">
+                Towns to work through, in order (one per line)
+                <textarea
+                  name="towns"
+                  rows={8}
+                  defaultValue={queueSettings.towns.join("\n")}
+                />
+              </label>
+              <p className="dialog-copy queue-next">
+                Next town to search:{" "}
+                <strong>
+                  {queueSettings.towns[queueSettings.nextTown] ?? queueSettings.towns[0]}
+                </strong>
+              </p>
+              <div className="field-grid">
+                <label className="field">
+                  Emails to prepare a day
+                  <input
+                    name="dailyCount"
+                    type="number"
+                    min={1}
+                    max={20}
+                    defaultValue={queueSettings.dailyCount}
+                  />
+                </label>
+                <label className="field">
+                  Type of business
+                  <select name="category" defaultValue={queueSettings.category}>
+                    {businessTypes.map(({ group, types }) => (
+                      <optgroup key={group} label={group}>
+                        {Object.entries(types).map(([key, t]) => (
+                          <option key={key} value={key}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="dialog-actions">
+                <button type="button" className="btn" onClick={close}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={!!busy}
+                >
+                  {busy === "save" ? "Saving…" : "Save settings"} <FiCheck />
+                </button>
+              </div>
+            </form>
+          ) : panel === "import" ? (
             <>
               <p className="dialog-copy">
                 Upload a CSV, review it, then save. Existing businesses keep
@@ -1298,7 +1646,9 @@ export default function OutreachPage() {
                   is blocked.
                 </div>
               )}
-              {followUpNumber === null && !draftInfo?.limitedCompany && (
+              {followUpNumber === null &&
+                !draftInfo?.limitedCompany &&
+                !(selected && verifiedCompany(selected)) && (
                 <p className="pecr-note">
                   Couldn’t confirm this is a limited company. If it’s a sole
                   trader or partnership, UK PECR rules require their consent
@@ -1568,6 +1918,48 @@ export default function OutreachPage() {
                       ? "Allow contacting again"
                       : "Mark do not contact"}
                   </button>
+                  <div className="company-check">
+                    <FiShield />
+                    <strong>Company status</strong>
+                    <span className={verifiedCompany(selected) ? "" : "muted"}>
+                      {companyLabel(selected)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-button"
+                    disabled={!!busy}
+                    onClick={() =>
+                      void patchLead(
+                        selected,
+                        {
+                          verifiedLimited:
+                            selected.companyCheck?.status !== "manual",
+                        },
+                        selected.companyCheck?.status === "manual"
+                          ? `${selected.name} will be checked with Companies House again.`
+                          : `${selected.name} confirmed as a limited company.`,
+                      )
+                    }
+                  >
+                    <FiShield />
+                    {selected.companyCheck?.status === "manual"
+                      ? "Undo manual confirmation"
+                      : "I've confirmed it's a limited company"}
+                  </button>
+                  <p>
+                    Only limited companies can be emailed without consent.
+                    Trading names often differ from the registered name, so
+                    look them up on{" "}
+                    <a
+                      href={`https://find-and-update.company-information.service.gov.uk/search/companies?q=${encodeURIComponent(selected.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Companies House
+                    </a>{" "}
+                    if the automatic check didn’t find them.
+                  </p>
                 </div>
               )}
               <div className="dialog-actions">

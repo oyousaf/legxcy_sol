@@ -4,7 +4,12 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
 import { contactEmails, siteSnapshot, type SiteSnapshot } from "@/lib/leads/siteSnapshot";
-import { MAX_FOLLOW_UPS, nextFollowUp, type Lead } from "@/lib/leads/model";
+import {
+  MAX_FOLLOW_UPS,
+  nextFollowUp,
+  verifiedCompany,
+  type Lead,
+} from "@/lib/leads/model";
 
 export const maxDuration = 60;
 const limiter = new RateLimiterMemory({ points: 30, duration: 3600 });
@@ -221,10 +226,13 @@ export async function POST(req: Request) {
   if (denied) return denied;
   let id: string;
   let followUp: boolean;
+  let queue: boolean;
   try {
     const body = await req.json();
     id = body.id;
     followUp = body.followUp === true;
+    // Queue mode saves the draft on the business for the Ready to send list.
+    queue = body.queue === true && !followUp;
     if (typeof id !== "string" || !/^[a-f0-9]{32}$/.test(id)) throw Error();
   } catch {
     return NextResponse.json({ error: "Choose a saved business." }, { status: 400 });
@@ -282,6 +290,16 @@ export async function POST(req: Request) {
     }
   }
 
+  if (queue && !lead.email) {
+    // Nowhere to send it, so don't spend an AI call or offer it again.
+    try {
+      lead = await updateLead(lead.id, { queueSkipped: true });
+    } catch {}
+    return NextResponse.json(
+      { error: `No email address found for ${lead.name}.`, lead, skipped: true },
+      { status: 422 },
+    );
+  }
   const next = followUp ? nextFollowUp(lead) : null;
   if (followUp && (!next || !lead.outreach))
     return NextResponse.json(
@@ -305,12 +323,24 @@ export async function POST(req: Request) {
   if ("error" in result)
     return NextResponse.json({ error: result.error, lead }, { status: result.status });
   const draft = result.draft;
+  if (queue) {
+    try {
+      lead = await updateLead(lead.id, {
+        queuedDraft: { ...draft, createdAt: new Date().toISOString() },
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "The draft couldn't be saved. Check the database connection." },
+        { status: 503 },
+      );
+    }
+  }
 
   return NextResponse.json({
     ...draft,
     lead,
     foundEmail,
-    limitedCompany: site?.limitedCompany ?? false,
+    limitedCompany: verifiedCompany(lead) || (site?.limitedCompany ?? false),
     siteError,
   });
 }

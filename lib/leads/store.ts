@@ -32,3 +32,32 @@ export async function deleteLead(id:string):Promise<boolean>{
   if(local())return serial(async()=>{const all=await readLocal();if(!all[id])return false;delete all[id];await writeLocal(all);return true});
   return (await kv.hdel(KEY,id))>0;
 }
+
+export type QueueSettings = {
+  towns: string[];
+  /** Index into towns of the next place to search when the queue runs dry. */
+  nextTown: number;
+  dailyCount: number;
+  category: string;
+};
+export const defaultQueueSettings: QueueSettings = {
+  towns: ["Ossett", "Horbury", "Wakefield", "Dewsbury", "Batley", "Mirfield", "Morley", "Normanton"],
+  nextTown: 0,
+  dailyCount: 5,
+  category: "all",
+};
+const SETTINGS_KEY = 'outreach:settings:v1';
+const settingsFile = () => path.join(process.cwd(), '.data', 'outreach-settings.json');
+export async function getQueueSettings(): Promise<QueueSettings> {
+  let saved: Partial<QueueSettings> | null = null;
+  if (local()) {
+    try { saved = JSON.parse(await readFile(settingsFile(), 'utf8')); }
+    catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
+  } else saved = await kv.get<Partial<QueueSettings>>(SETTINGS_KEY);
+  return { ...defaultQueueSettings, ...saved };
+}
+export async function saveQueueSettings(settings: QueueSettings) {
+  if (!local()) return void (await kv.set(SETTINGS_KEY, settings));
+  await mkdir(path.dirname(settingsFile()), { recursive: true });
+  await writeFile(settingsFile(), JSON.stringify(settings, null, 2));
+}

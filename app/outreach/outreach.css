@@ -82,3 +82,22 @@
 .thread-status { color: var(--accent-green) !important; }
 .field input[readonly] { opacity: .7; }
 .work-dialog { margin: auto; } /* Tailwind preflight zeroes the margin that centres <dialog>. */
+
+/* Ready to send queue */
+.queue { border: 1px solid #9bcca535; background: #9bcca508; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+.queue-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.queue-head h2 { display: flex; align-items: center; gap: 9px; font-size: 1.1rem; font-weight: 500; letter-spacing: -.02em; margin: 0; color: var(--accent-green); }
+.queue-head h2 span { background: #9bcca525; border-radius: 5px; padding: 1px 7px; font-size: .8rem; }
+.queue-head p { color: var(--muted); font-size: .85rem; line-height: 1.6; margin: 8px 0 4px; max-width: 640px; }
+.queue-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.queue-progress { display: flex; align-items: center; gap: 4px; font-size: .85rem; color: var(--accent-green); margin: 12px 0 0; }
+.queue-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); margin-top: 12px; flex-wrap: wrap; }
+.queue-info { min-width: 0; flex: 1 1 320px; }
+.queue-info strong { font-weight: 500; display: block; }
+.queue-info small { color: var(--muted); font-size: .8rem; display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.queue-info p { font-size: .85rem; color: #c9dbd0; line-height: 1.6; margin: 8px 0 0; overflow-wrap: anywhere; }
+.queue-info b { font-weight: 500; }
+.queue-next { font-size: .9rem !important; }
+.company-check { display: flex; align-items: center; gap: 10px; font-size: .875rem; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.company-check .muted { color: var(--muted) !important; }
+.business-tools p a { text-decoration: underline; }

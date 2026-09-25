@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
-const limiter = new RateLimiterMemory({ points: 10, duration: 3600 });
+const limiter = new RateLimiterMemory({ points: 40, duration: 3600 });
 export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;

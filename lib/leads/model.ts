@@ -18,7 +18,20 @@ export type Lead = {
   followUps?: { messageId: string; sentAt: string; requestId: string; text: string }[];
   repliedAt?: string;
   optedOut?: boolean;
+  companyCheck?: CompanyCheck | null;
+  queuedDraft?: QueuedDraft | null;
+  queueSkipped?: boolean;
 };
+export type CompanyCheck = {
+  /** "manual" = confirmed by hand as a limited company. */
+  status: "limited" | "not-limited" | "not-found" | "manual";
+  number?: string;
+  name?: string;
+  checkedAt: string;
+};
+export type QueuedDraft = { subject: string; message: string; angle: string; createdAt: string };
+export const verifiedCompany = (l: Pick<Lead, "companyCheck">) =>
+  l.companyCheck?.status === "limited" || l.companyCheck?.status === "manual";
 export type LeadInput = Pick<Lead,"name"|"address"|"email"|"phone"|"website"|"websiteStatus"|"contacted"|"notes"|"source"|"sourceId">;
 export const emptyLead: LeadInput = {name:"",address:"",email:"",phone:"",website:"",websiteStatus:"unknown",contacted:false,notes:"",source:"manual",sourceId:""};
 export function normaliseWebsite(value:string):string {
