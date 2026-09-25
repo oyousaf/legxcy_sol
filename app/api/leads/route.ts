@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
-import { addLeads, getLeads, storageMode, updateLead } from "@/lib/leads/store";
+import {
+  addLeads,
+  deleteLead,
+  getLeads,
+  storageMode,
+  updateLead,
+} from "@/lib/leads/store";
 import { validateLead } from "@/lib/leads/model";
 export const dynamic = "force-dynamic";
 const storageError = () =>
@@ -77,5 +83,19 @@ export async function PATCH(req: Request) {
     return e instanceof Error && e.message === "Business not found."
       ? NextResponse.json({ error: e.message }, { status: 404 })
       : storageError();
+  }
+}
+export async function DELETE(req: Request) {
+  const denied = requireOutreachAuth(req);
+  if (denied) return denied;
+  const id = new URL(req.url).searchParams.get("id") || "";
+  if (!/^[a-f0-9]{32}$/.test(id))
+    return NextResponse.json({ error: "Invalid business ID." }, { status: 400 });
+  try {
+    return (await deleteLead(id))
+      ? NextResponse.json({ deleted: true })
+      : NextResponse.json({ error: "Business not found." }, { status: 404 });
+  } catch {
+    return storageError();
   }
 }

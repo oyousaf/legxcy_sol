@@ -28,3 +28,7 @@ export async function updateLead(id:string,patch:Partial<Lead>):Promise<Lead>{
   const result=await kv.eval<string[], string | Lead | null>(`local raw=redis.call('HGET',KEYS[1],ARGV[1]); if not raw then return nil end; local lead=cjson.decode(raw); local patch=cjson.decode(ARGV[2]); for k,v in pairs(patch) do lead[k]=v end; local encoded=cjson.encode(lead); redis.call('HSET',KEYS[1],ARGV[1],encoded); return encoded`,[KEY],[id,JSON.stringify(changes)]);
   if(!result)throw new Error('Business not found.');return typeof result==='string'?JSON.parse(result):result;
 }
+export async function deleteLead(id:string):Promise<boolean>{
+  if(local())return serial(async()=>{const all=await readLocal();if(!all[id])return false;delete all[id];await writeLocal(all);return true});
+  return (await kv.hdel(KEY,id))>0;
+}

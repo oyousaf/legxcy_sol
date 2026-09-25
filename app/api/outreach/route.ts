@@ -2,31 +2,26 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { requireOutreachAuth } from "@/lib/outreachAuth";
 import { getLeads, updateLead } from "@/lib/leads/store";
-export async function GET(req: Request) {
-  const denied = requireOutreachAuth(req);
-  if (denied) return denied;
-  return NextResponse.json(
-    {
-      error:
-        "Google discovery is disabled. Use Geoapify discovery or import businesses.",
-    },
-    { status: 410 },
-  );
-}
+// UK PECR: every marketing email must identify the sender and offer a free opt-out.
+const FOOTER =
+  '\n\n--\nLegxcy Solutions · legxcysol.dev\nNot interested? Reply "no thanks" and I won\'t contact you again.';
 export async function POST(req: Request) {
   const denied = requireOutreachAuth(req);
   if (denied) return denied;
-  let id: string, message: string, requestId: string;
+  let id: string, message: string, subject: string, requestId: string;
   try {
     const body = await req.json();
     id = body.id;
     message = body.message;
     requestId = body.requestId;
+    subject = body.subject ?? "";
     if (
       typeof id !== "string" ||
       typeof message !== "string" ||
       !message.trim() ||
       message.length > 10000 ||
+      typeof subject !== "string" ||
+      subject.length > 150 ||
       typeof requestId !== "string" ||
       !/^[a-f0-9-]{36}$/.test(requestId)
     )
@@ -57,8 +52,8 @@ export async function POST(req: Request) {
         from: `Legxcy Solutions <${from}>`,
         to: lead.email,
         replyTo: process.env.RESEND_TO_EMAIL || from,
-        subject: "A website idea for " + lead.name,
-        text: message.trim(),
+        subject: subject.trim() || "A website idea for " + lead.name,
+        text: message.trim() + FOOTER,
       },
       { idempotencyKey: `outreach/${id}/${requestId}` },
     );

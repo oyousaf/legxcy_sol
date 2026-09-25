@@ -15,6 +15,10 @@ import {
   FiActivity,
   FiArrowLeft,
   FiRefreshCw,
+  FiZap,
+  FiTrash2,
+  FiChevronsLeft,
+  FiChevronsRight,
 } from "react-icons/fi";
 import {
   emptyLead,
@@ -52,6 +56,40 @@ const websiteLabel = {
   unknown: "Website unknown",
   absent: "Confirmed no website",
 };
+// PageSpeed mobile scores below this are worth pitching a rebuild.
+const LOW_SCORE = 50;
+const lowScore = (l: Lead) =>
+  !!l.performance &&
+  [l.performance.mobile, l.performance.desktop].some(
+    (n) => n !== null && n < LOW_SCORE,
+  );
+const isOpportunity = (l: Lead) => l.websiteStatus !== "present" || lowScore(l);
+const filters: Record<string, (l: Lead) => boolean> = {
+  all: () => true,
+  opportunity: isOpportunity,
+  new: (l) => !l.contacted,
+  contacted: (l) => l.contacted,
+  nosite: (l) => l.websiteStatus !== "present",
+  low: lowScore,
+  unchecked: (l) => l.websiteStatus === "present" && !l.performance,
+};
+const TOWNS = ["Ossett", "Wakefield", "Dewsbury", "Leeds", "Huddersfield", "Batley", "Horbury", "Pontefract", "Castleford", "Bradford"];
+type DraftInfo = { angle: string; limitedCompany: boolean; siteError: string };
+function stored(key: string) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function store(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
+function scoreClass(n: number | null) {
+  return n === null ? "" : n < LOW_SCORE ? "amber" : n >= 90 ? "green" : "";
+}
 export default function OutreachPage() {
   const [leads, setLeads] = useState<Lead[]>([]),
     [loading, setLoading] = useState(true),
@@ -73,9 +111,31 @@ export default function OutreachPage() {
     [discovered, setDiscovered] = useState<LeadInput[]>([]),
     [discoveryDone, setDiscoveryDone] = useState(false),
     [discoveryLabel, setDiscoveryLabel] = useState(""),
-    [chosen, setChosen] = useState<Set<number>>(new Set());
+    [chosen, setChosen] = useState<Set<number>>(new Set()),
+    [hideListed, setHideListed] = useState(true);
   const [message, setMessage] = useState(""),
+    [subject, setSubject] = useState(""),
+    [draftInfo, setDraftInfo] = useState<DraftInfo | null>(null),
     [requestId, setRequestId] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    // Restore per-browser layout preferences after hydration.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setCollapsed(stored("outreach:collapsed") === "1");
+    const f = stored("outreach:filter");
+    if (f && f in filters) setFilter(f);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+  function chooseFilter(f: string) {
+    setFilter(f);
+    store("outreach:filter", f);
+  }
+  function toggleSidebar() {
+    setCollapsed((c) => {
+      store("outreach:collapsed", c ? "0" : "1");
+      return !c;
+    });
+  }
   const searchRef = useRef<HTMLInputElement>(null);
   const selected = leads.find((l) => l.id === selectedId);
   const load = useCallback(async () => {
@@ -134,19 +194,12 @@ export default function OutreachPage() {
             .toLowerCase()
             .includes(query.toLowerCase()),
         )
-        .filter(
-          (l) =>
-            filter === "all" ||
-            (filter === "contacted" && l.contacted) ||
-            (filter === "new" && !l.contacted) ||
-            (filter === "unknown" && l.websiteStatus === "unknown") ||
-            (filter === "absent" && l.websiteStatus === "absent"),
-        ),
+        .filter(filters[filter] ?? filters.all),
     [leads, query, filter],
   );
   const savedIdentities = useMemo(() => new Set(leads.map(identity)), [leads]);
   function close() {
-    if (busy === "save" || busy === "send") return;
+    if (["save", "send", "draft", "delete"].includes(busy)) return;
     setPanel(null);
     setFormError("");
   }
@@ -270,7 +323,7 @@ export default function OutreachPage() {
       const data = await api<{ lead?: Lead; warning?: string }>(
         "/api/outreach",
         "POST",
-        { id: selectedId, message, requestId },
+        { id: selectedId, message, subject, requestId },
       );
       if (data.lead) updateInList(data.lead);
       setNotice(
@@ -283,35 +336,111 @@ export default function OutreachPage() {
       setBusy("");
     }
   }
+  function compose(lead: Lead) {
+    setSubject(`A website idea for ${lead.name}`);
+    setMessage(
+      `Hi,\n\nI came across ${lead.name} and wanted to introduce Legxcy Solutions. We design and develop websites for local businesses.\n\nWould you be open to a short conversation about your website?\n\nBest regards,\nLegxcy Solutions`,
+    );
+    setDraftInfo(null);
+    setRequestId(crypto.randomUUID());
+    setFormError("");
+    setPanel("compose");
+  }
+  async function aiDraft(lead: Lead) {
+    setBusy("draft");
+    setFormError("");
+    try {
+      const res = await fetch("/api/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: lead.id }),
+        cache: "no-store",
+      });
+      const data = await res.json();
+      // The draft route may have saved an email it found, even on failure.
+      if (data.lead) updateInList(data.lead);
+      if (!res.ok) throw Error(data.error || "Draft failed. Please retry.");
+      setSubject(data.subject);
+      setMessage(data.message);
+      setDraftInfo({
+        angle: data.angle,
+        limitedCompany: data.limitedCompany,
+        siteError: data.siteError,
+      });
+      if (data.foundEmail)
+        setNotice(`Found and saved ${data.foundEmail} from their website.`);
+      setRequestId(crypto.randomUUID());
+      setPanel("compose");
+    } catch (e) {
+      setFormError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function deleteBusiness(lead: Lead) {
+    if (!window.confirm(`Delete ${lead.name}? This can't be undone.`)) return;
+    setBusy("delete");
+    setFormError("");
+    try {
+      await api(`/api/leads?id=${lead.id}`, "DELETE");
+      setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+      setNotice(`${lead.name} deleted.`);
+      setPanel(null);
+    } catch (e) {
+      setFormError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  const shownDiscovered = discovered
+    .map((lead, i) => ({ lead, i }))
+    .filter(({ lead }) => !hideListed || !lead.website);
   return (
-    <div className="workspace">
+    <div className={`workspace${collapsed ? " collapsed" : ""}`}>
       <aside className="work-sidebar">
-        <Link className="brand" href="/">
-          <Image src="/logo.webp" width={30} height={30} alt="" />
-          <span>legxcy</span>
-          <span>studio</span>
-        </Link>
+        <div className="sidebar-top">
+          <Link className="brand" href="/" aria-label="Legxcy Studio home">
+            <Image src="/logo.webp" width={30} height={30} alt="" />
+            <span className="brand-text">
+              <span>legxcy</span> <span>studio</span>
+            </span>
+          </Link>
+          <button
+            className="icon-btn collapse-btn"
+            onClick={toggleSidebar}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
+          </button>
+        </div>
         <div className="workspace-label">
           WORKSPACE <span>Private</span>
         </div>
         <nav aria-label="Workspace">
           <button
             className={view === "leads" ? "active" : ""}
+            aria-label="Businesses"
+            title={collapsed ? "Businesses" : undefined}
             onClick={() => {
               setView("leads");
               setError("");
             }}
           >
-            <FiGrid /> Businesses <span>{leads.length}</span>
+            <FiGrid /> <span className="nav-label">Businesses</span>
+            <span className="nav-count">{leads.length}</span>
           </button>
           <button
             className={view === "discover" ? "active" : ""}
+            aria-label="Discover nearby"
+            title={collapsed ? "Discover nearby" : undefined}
             onClick={() => {
               setView("discover");
               setError("");
             }}
           >
-            <FiCompass /> Discover nearby
+            <FiCompass /> <span className="nav-label">Discover nearby</span>
           </button>
         </nav>
         <div className="sidebar-note">
@@ -322,8 +451,8 @@ export default function OutreachPage() {
             No scheduled API calls.
           </p>
         </div>
-        <Link className="back-link" href="/">
-          <FiArrowLeft /> Back to website
+        <Link className="back-link" href="/" title="Back to website">
+          <FiArrowLeft /> <span className="nav-label">Back to website</span>
         </Link>
       </aside>
       <main className="work-main">
@@ -407,9 +536,9 @@ export default function OutreachPage() {
                     "Marked contacted",
                   ],
                   [
-                    "Needs a closer look",
-                    leads.filter((l) => l.websiteStatus === "unknown").length,
-                    "Website unknown",
+                    "Opportunities",
+                    leads.filter(isOpportunity).length,
+                    `No website or score under ${LOW_SCORE}`,
                   ],
                 ].map(([label, note, sub], i) => (
                   <div className={`metric metric-${i}`} key={label}>
@@ -424,13 +553,14 @@ export default function OutreachPage() {
                   <div className="filter-tabs">
                     {[
                       ["all", "All businesses"],
+                      ["opportunity", "Opportunities"],
                       ["new", "Not contacted"],
                       ["contacted", "Contacted"],
                     ].map(([key, label]) => (
                       <button
                         key={key}
                         className={filter === key ? "selected" : ""}
-                        onClick={() => setFilter(key)}
+                        onClick={() => chooseFilter(key)}
                       >
                         {label}
                       </button>
@@ -461,13 +591,17 @@ export default function OutreachPage() {
                   <select
                     aria-label="Website and contact filter"
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
+                    onChange={(e) => chooseFilter(e.target.value)}
                   >
                     <option value="all">All businesses</option>
+                    <option value="opportunity">
+                      Opportunities (no site or low score)
+                    </option>
+                    <option value="nosite">No website</option>
+                    <option value="low">Score under {LOW_SCORE}</option>
+                    <option value="unchecked">Website not scored yet</option>
                     <option value="new">Not contacted</option>
                     <option value="contacted">Contacted</option>
-                    <option value="unknown">Website unknown</option>
-                    <option value="absent">Confirmed no website</option>
                   </select>
                   <button
                     className="icon-btn"
@@ -503,7 +637,7 @@ export default function OutreachPage() {
                         leads.length
                           ? () => {
                               setQuery("");
-                              setFilter("all");
+                              chooseFilter("all");
                             }
                           : openAdd
                       }
@@ -561,6 +695,18 @@ export default function OutreachPage() {
                                   )}{" "}
                                   <FiArrowUpRight />
                                 </a>
+                              ) : null}
+                              {lead.website && lead.performance ? (
+                                <span
+                                  className={`badge score-badge ${scoreClass(lead.performance.mobile)}`}
+                                  title={`Desktop ${lead.performance.desktop ?? "N/A"}`}
+                                >
+                                  Mobile {lead.performance.mobile ?? "N/A"}
+                                </span>
+                              ) : lead.website ? (
+                                <small className="source-label">
+                                  Not scored
+                                </small>
                               ) : (
                                 <span
                                   className={`badge ${lead.websiteStatus === "absent" ? "amber" : ""}`}
@@ -630,14 +776,23 @@ export default function OutreachPage() {
               <div className="discovery-controls">
                 <div>
                   <label htmlFor="town">Around</label>
-                  <select
+                  <input
                     id="town"
+                    className="town-input"
+                    list="town-options"
                     value={town}
+                    maxLength={60}
+                    placeholder="Any UK town or city"
                     onChange={(e) => setTown(e.target.value)}
-                  >
-                    <option>Ossett</option>
-                    <option>Wakefield</option>
-                  </select>
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !busy) void discover();
+                    }}
+                  />
+                  <datalist id="town-options">
+                    {TOWNS.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label htmlFor="category">Type of business</label>
@@ -655,7 +810,7 @@ export default function OutreachPage() {
                 <button
                   className="btn btn-primary"
                   onClick={() => void discover()}
-                  disabled={!!busy}
+                  disabled={!!busy || !town.trim()}
                 >
                   <FiSearch />{" "}
                   {busy === "discover" ? "Searching…" : "Discover businesses"}
@@ -663,13 +818,31 @@ export default function OutreachPage() {
               </div>
               <p className="discovery-help">
                 Up to 50 results within 2.5 km. Missing website details mean
-                “unknown”—please verify before reaching out.
+                “unknown”—please verify before reaching out. Save a business
+                and run a performance check to find slow sites.
               </p>
+              <label className="check-field">
+                <input
+                  type="checkbox"
+                  checked={hideListed}
+                  onChange={(e) => setHideListed(e.target.checked)}
+                />
+                Only show businesses without a listed website
+              </label>
               {discoveryDone ? (
                 <>
                   <div className="discovery-summary">
                     <h2>
-                      {discovered.length} businesses around {discoveryLabel}
+                      {shownDiscovered.length} businesses around{" "}
+                      {discoveryLabel}
+                      {hideListed &&
+                        shownDiscovered.length < discovered.length && (
+                          <small>
+                            {" "}
+                            ({discovered.length - shownDiscovered.length} with
+                            a website hidden)
+                          </small>
+                        )}
                     </h2>
                     <button
                       className="btn"
@@ -682,7 +855,7 @@ export default function OutreachPage() {
                     </button>
                   </div>
                   <div className="discovery-grid">
-                    {discovered.map((lead, i) => {
+                    {shownDiscovered.map(({ lead, i }) => {
                       const saved = savedIdentities.has(identity(lead));
                       return (
                         <label
@@ -722,9 +895,11 @@ export default function OutreachPage() {
                       );
                     })}
                   </div>
-                  {!discovered.length && (
+                  {!shownDiscovered.length && (
                     <div className="work-empty">
-                      No named businesses found. Try another category.
+                      {discovered.length
+                        ? "Every business found lists a website. Untick the filter to see them."
+                        : "No named businesses found. Try another category."}
                     </div>
                   )}
                 </>
@@ -864,8 +1039,42 @@ export default function OutreachPage() {
           ) : panel === "compose" ? (
             <>
               <p className="dialog-copy">
-                To {selected?.name} · {selected?.email}
+                To {selected?.name} ·{" "}
+                {selected?.email || "no email address saved yet"}
               </p>
+              {draftInfo && (
+                <div className="draft-info">
+                  <FiZap />
+                  <div>
+                    <strong>AI draft. Check it before sending.</strong>
+                    <p>{draftInfo.angle}</p>
+                    {draftInfo.siteError && (
+                      <p>
+                        Their website couldn’t be read ({draftInfo.siteError}),
+                        so the draft is more general.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {!draftInfo?.limitedCompany && (
+                <p className="pecr-note">
+                  Couldn’t confirm this is a limited company. If it’s a sole
+                  trader or partnership, UK PECR rules require their consent
+                  before a marketing email, so phone or visit instead.
+                </p>
+              )}
+              <label className="field">
+                Subject
+                <input
+                  value={subject}
+                  maxLength={150}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    setRequestId(crypto.randomUUID());
+                  }}
+                />
+              </label>
               <label className="field">
                 Message
                 <textarea
@@ -878,7 +1087,9 @@ export default function OutreachPage() {
                 />
               </label>
               <p className="dialog-copy">
-                The business is marked contacted after the email is accepted.
+                A signature and “reply no thanks to opt out” line are added
+                automatically. The business is marked contacted after the email
+                is accepted.
               </p>
               <div className="dialog-actions">
                 <button className="btn" onClick={close} disabled={!!busy}>
@@ -886,7 +1097,7 @@ export default function OutreachPage() {
                 </button>
                 <button
                   className="btn btn-primary"
-                  disabled={!!busy || !message.trim()}
+                  disabled={!!busy || !message.trim() || !selected?.email}
                   onClick={() => void send()}
                 >
                   <FiMail />
@@ -1023,27 +1234,48 @@ export default function OutreachPage() {
                   <p>
                     Checks use the saved website and only run when requested.
                   </p>
-                  <button
-                    type="button"
-                    className="btn btn-small"
-                    disabled={!!busy || !selected.email}
-                    onClick={() => {
-                      setMessage(
-                        `Hi,\n\nI came across ${selected.name} and wanted to introduce Legxcy Solutions. We design and develop websites for local businesses.\n\nWould you be open to a short conversation about your website?\n\nBest regards,\nLegxcy Solutions`,
-                      );
-                      setRequestId(crypto.randomUUID());
-                      setFormError("");
-                      setPanel("compose");
-                    }}
-                  >
-                    <FiMail /> Compose email
-                  </button>
-                  {!selected.email && (
-                    <p>Save an email address to compose outreach.</p>
-                  )}
+                  <div className="tool-buttons">
+                    <button
+                      type="button"
+                      className="btn btn-small btn-primary"
+                      disabled={!!busy}
+                      onClick={() => void aiDraft(selected)}
+                    >
+                      <FiZap />
+                      {busy === "draft" ? "Reading their site…" : "AI draft"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-small"
+                      disabled={!!busy || !selected.email}
+                      onClick={() => compose(selected)}
+                    >
+                      <FiMail /> Write manually
+                    </button>
+                  </div>
+                  <p>
+                    AI draft reads their homepage and performance scores, then
+                    writes a personal first email for you to edit.
+                    {!selected.email &&
+                      " If no email is saved, it looks for one on their website."}
+                    {selected.website &&
+                      !selected.performance &&
+                      " Run a performance check first for a sharper draft."}
+                  </p>
                 </div>
               )}
               <div className="dialog-actions">
+                {panel === "edit" && selected && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={!!busy}
+                    onClick={() => void deleteBusiness(selected)}
+                  >
+                    <FiTrash2 />
+                    {busy === "delete" ? "Deleting…" : "Delete"}
+                  </button>
+                )}
                 <button type="button" className="btn" onClick={close}>
                   Cancel
                 </button>

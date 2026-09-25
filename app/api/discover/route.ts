@@ -24,20 +24,20 @@ export async function POST(req: Request) {
   let category: keyof typeof categories;
   try {
     const body = await req.json();
-    town = body.town;
+    town = typeof body.town === "string" ? body.town.trim() : "";
     category = body.category || "all";
     if (
-      !["Ossett", "Wakefield"].includes(town) ||
+      !/^\p{L}[\p{L} .'-]{1,59}$/u.test(town) ||
       !Object.hasOwn(categories, category)
     )
       throw Error();
   } catch {
     return NextResponse.json(
-      { error: "Choose Ossett or Wakefield and a business category." },
+      { error: "Enter a UK town or city and choose a business category." },
       { status: 400 },
     );
   }
-  const key = `${town}:${category}`;
+  const key = `${town.toLowerCase()}:${category}`;
   const cached = cache.get(key);
   if (cached && Date.now() - cached.at < 3600000)
     return NextResponse.json({ leads: cached.leads, cached: true });
@@ -56,7 +56,8 @@ export async function POST(req: Request) {
     const geo = await fetch(
       "https://api.geoapify.com/v1/geocode/search?" +
         new URLSearchParams({
-          text: `${town}, West Yorkshire, United Kingdom`,
+          text: town,
+          filter: "countrycode:gb",
           type: "city",
           limit: "1",
           apiKey,
@@ -66,7 +67,11 @@ export async function POST(req: Request) {
     if (!geo.ok) throw Error();
     const gj = await geo.json();
     const p = gj.features?.[0]?.properties;
-    if (!p || !Number.isFinite(p.lon) || !Number.isFinite(p.lat)) throw Error();
+    if (!p || !Number.isFinite(p.lon) || !Number.isFinite(p.lat))
+      return NextResponse.json(
+        { error: `Couldn't find "${town}" in the UK. Check the spelling.` },
+        { status: 404 },
+      );
     const places = await fetch(
       "https://api.geoapify.com/v2/places?" +
         new URLSearchParams({
