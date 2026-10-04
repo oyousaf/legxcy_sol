@@ -16,7 +16,7 @@ const projects = [
   ],
   [
     "Beds4U",
-    "A distinctive home for a car rental business.",
+    "An online store for a UK bed factory.",
     "hxmza",
     "https://hxmza.uk",
   ],
