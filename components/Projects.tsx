@@ -45,6 +45,12 @@ const projects = [
     "https://acemotorsales.uk",
   ],
   [
+    "Unlock Your Potential",
+    "A charity championing social mobility through mentorship.",
+    "uyp",
+    "https://uypp.vercel.app",
+  ],
+  [
     "Not3s",
     "A simple space to capture everyday ideas.",
     "not3s",
