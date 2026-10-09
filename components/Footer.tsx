@@ -1,4 +1,21 @@
 import Link from "next/link";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaTelegramPlane,
+  FaWhatsapp,
+} from "react-icons/fa";
+import { socials } from "@/lib/site";
+
+const socialLinks = [
+  { label: "LinkedIn", href: socials.linkedin, Icon: FaLinkedinIn },
+  { label: "Facebook", href: socials.facebook, Icon: FaFacebookF },
+  { label: "Instagram", href: socials.instagram, Icon: FaInstagram },
+  { label: "Telegram", href: socials.telegram, Icon: FaTelegramPlane },
+  { label: "WhatsApp", href: socials.whatsapp, Icon: FaWhatsapp },
+];
+
 export default function Footer() {
   return (
     <footer className="footer">
@@ -16,27 +33,18 @@ export default function Footer() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Legxcy Solutions</span>
           <div className="footer-links">
-            <a
-              href="https://www.linkedin.com/company/legxcy-solutions/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              LinkedIn ↗
-            </a>
-            <a
-              href="https://t.me/kufiii"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Telegram ↗
-            </a>
-            <a
-              href="https://wa.me/447597866002"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              WhatsApp ↗
-            </a>
+            {socialLinks.map(({ label, href, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                title={label}
+              >
+                <Icon aria-hidden="true" />
+              </a>
+            ))}
           </div>
           <span>Designed & developed in the UK</span>
         </div>

@@ -6,6 +6,14 @@ export const site = {
     "Bespoke web design, development and website redesign for UK businesses. Explore Legxcy Solutions’ work and discuss your next website or digital tool.",
 };
 
+export const socials = {
+  linkedin: "https://www.linkedin.com/company/legxcy-solutions/",
+  facebook: "https://www.facebook.com/legxcysol",
+  instagram: "https://www.instagram.com/legxcysol",
+  telegram: "https://t.me/kufiii",
+  whatsapp: "https://wa.me/447597866002",
+};
+
 export const homeStructuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -18,7 +26,7 @@ export const homeStructuredData = {
       image: `${site.url}/og-image.jpg`,
       email: "info@legxcysol.dev",
       telephone: "+447597866002",
-      sameAs: ["https://www.linkedin.com/company/legxcy-solutions/"],
+      sameAs: [socials.linkedin, socials.facebook, socials.instagram],
     },
     {
       "@type": "WebSite",

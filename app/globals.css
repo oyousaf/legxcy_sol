@@ -477,7 +477,22 @@ section[id] {
 }
 .footer-links {
   display: flex;
-  gap: 20px;
+  gap: 10px;
+}
+.footer-links a {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 1.05rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: var(--accent-green);
+  border-color: var(--accent-green);
 }
 .skip-link {
   position: fixed;
