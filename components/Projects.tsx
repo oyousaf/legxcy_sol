@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "Ellipsis",
+    "Machine-learning pollution data for councils and classrooms.",
+    "ellipsis",
+    "https://ellipsis-tau.vercel.app",
+  ],
+  [
     "Hecky Travel",
     "Flights, holidays and Hajj & Umrah packages.",
     "htravel",
