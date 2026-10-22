@@ -6,7 +6,7 @@ const projects = [
     "Ellipsis",
     "Machine-learning pollution data for councils and classrooms.",
     "ellipsis",
-    "https://ellipsis-tau.vercel.app",
+    "https://ellipsis.legxcysol.dev",
   ],
   [
     "Hecky Travel",
@@ -18,19 +18,19 @@ const projects = [
     "Awisee",
     "A link building and digital PR agency site.",
     "awisee",
-    "https://awisee.vercel.app",
+    "https://awisee.legxcysol.dev",
   ],
   [
     "Beds4U",
     "A fully fledged e-commerce storefront for a British bed manufacturer.",
     "hxmza",
-    "https://hxmza.uk",
+    "https://saeed.hxmza.uk",
   ],
   [
     "Hxmza",
     "A distinctive home for a car rental business.",
     "hxmza-hub",
-    "https://hxmza.vercel.app",
+    "https://hxmza.uk",
   ],
   [
     "Legxcy",
@@ -42,7 +42,7 @@ const projects = [
     "Astra AI",
     "A clearer way to manage job applications.",
     "astra",
-    "https://astra-ai-six.vercel.app",
+    "https://astra-ai.legxcysol.dev",
   ],
   [
     "Ace Motor Sales",
@@ -54,19 +54,19 @@ const projects = [
     "Unlock Your Potential",
     "A charity championing social mobility through mentorship.",
     "uyp",
-    "https://uypp.vercel.app",
+    "https://uyp.legxcysol.dev",
   ],
   [
     "Not3s",
     "A simple space to capture everyday ideas.",
     "not3s",
-    "https://not3s.vercel.app",
+    "https://notes.legxcysol.dev",
   ],
   [
     "Pollards",
     "Appointments, organised in one place.",
     "pollards",
-    "https://pollards.vercel.app",
+    "https://pollards.legxcysol.dev",
   ],
 ];
 export default function Projects() {
