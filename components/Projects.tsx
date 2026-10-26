@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "huni",
+    "A honey hair and body care brand with live pollinator data.",
+    "huni",
+    "https://huni.legxcysol.dev",
+  ],
+  [
     "Kanestone",
     "A cinematic showroom for a British luxury car supplier.",
     "kanestone",
