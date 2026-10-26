@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "Kanestone",
+    "A cinematic showroom for a British luxury car supplier.",
+    "kanestone",
+    "https://kanestone.vercel.app",
+  ],
+  [
     "Ellipsis",
     "Machine-learning pollution data for councils and classrooms.",
     "ellipsis",
