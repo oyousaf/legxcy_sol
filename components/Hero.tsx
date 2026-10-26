@@ -31,14 +31,14 @@ export default function Hero() {
       </div>
       <a
         className="feature-project"
-        href="https://legxcy.uk"
+        href="https://ellipsis.legxcsysol.dev"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="View Legxcy project (opens in a new tab)"
+        aria-label="View Ellipsis project (opens in a new tab)"
       >
         <Image
-          src="/projects/legxcy.webp"
-          alt="Legxcy landing page"
+          src="/projects/ellipsis.webp"
+          alt="Ellipsis landing page"
           fill
           sizes="100vw"
           priority
@@ -46,7 +46,7 @@ export default function Hero() {
         <div className="feature-caption">
           <div>
             <p>Featured Project</p>
-            <h2>Legxcy</h2>
+            <h2>Ellipsis</h2>
           </div>
           <span className="round-arrow">
             <FiArrowUpRight />
