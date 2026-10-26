@@ -31,7 +31,7 @@ export default function Hero() {
       </div>
       <a
         className="feature-project"
-        href="https://ellipsis.legxcsysol.dev"
+        href="https://ellipsis.legxcysol.dev"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="View Ellipsis project (opens in a new tab)"
