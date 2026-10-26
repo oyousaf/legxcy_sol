@@ -6,7 +6,7 @@ const projects = [
     "Kanestone",
     "A cinematic showroom for a British luxury car supplier.",
     "kanestone",
-    "https://kanestone.vercel.app",
+    "https://kanestone.legxcysol.dev",
   ],
   [
     "Ellipsis",
