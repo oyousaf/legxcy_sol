@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "ECAMS",
+    "An eco-led site for a London cleaning and maintenance company.",
+    "ecams",
+    "https://ecams.legxcysol.dev",
+  ],
+  [
     "huni",
     "A honey hair and body care brand with live pollinator data.",
     "huni",
