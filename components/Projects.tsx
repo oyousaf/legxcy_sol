@@ -4,7 +4,7 @@ import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
     "ECAMS",
-    "An eco-led site for a London cleaning and maintenance company.",
+    "An eco-led site for a cleaning and maintenance company.",
     "ecams",
     "https://ecams.legxcysol.dev",
   ],
