@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "DMIA",
+    "Transport advisory for rail, road and bus, mapped like a transit network.",
+    "dmia",
+    "https://dmia.legxcysol.dev",
+  ],
+  [
     "MTD Trade Books",
     "Making Tax Digital bookkeeping for builders and tradespeople.",
     "mtd",
