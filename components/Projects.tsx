@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "Excel Computer Solutions",
+    "Honest computer and laptop repairs in Ossett, styled like a repair bench.",
+    "excelcomp",
+    "https://excelcomp.legxcysol.dev",
+  ],
+  [
     "A Picture of You",
     "A wedding, portrait and newborn photography studio in Ossett.",
     "apou",
