@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "A Picture of You",
+    "A wedding, portrait and newborn photography studio in Ossett.",
+    "apou",
+    "https://apou.legxcysol.dev",
+  ],
+  [
     "DMIA",
     "Transport advisory for rail, road and bus, mapped like a transit network.",
     "dmia",
