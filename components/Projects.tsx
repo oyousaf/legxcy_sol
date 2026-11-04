@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "PropertyRama",
+    "Property repairs and maintenance in Milton Keynes, every trade drawn into one house cutaway.",
+    "propertyrama",
+    "https://propertyrama.legxcysol.dev",
+  ],
+  [
     "Maslin Jones",
     "Property and grounds maintenance around Milton Keynes, finished with mown-lawn stripes.",
     "maslinjones",
