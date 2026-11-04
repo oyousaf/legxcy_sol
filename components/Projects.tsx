@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "Maslin Jones",
+    "Property and grounds maintenance around Milton Keynes, finished with mown-lawn stripes.",
+    "maslinjones",
+    "https://maslinjones.legxcysol.dev",
+  ],
+  [
     "Excel Computer Solutions",
     "Honest computer and laptop repairs in Ossett, styled like a repair bench.",
     "excelcomp",
