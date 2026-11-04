@@ -4,31 +4,31 @@ import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
     "Elcam",
-    "Building and maintenance in Milton Keynes, navigated through a blueprint of a house and office block.",
+    "Building and maintenance, navigated through a blueprint of a house and office block.",
     "elcam",
     "https://elcam.legxcysol.dev",
   ],
   [
     "PropertyRama",
-    "Property repairs and maintenance in Milton Keynes, every trade drawn into one house cutaway.",
+    "Property repairs and maintenance, every trade drawn into one house cutaway.",
     "propertyrama",
     "https://propertyrama.legxcysol.dev",
   ],
   [
     "Maslin Jones",
-    "Property and grounds maintenance around Milton Keynes, finished with mown-lawn stripes.",
+    "Property and grounds maintenance, finished with mown-lawn stripes.",
     "maslinjones",
     "https://maslinjones.legxcysol.dev",
   ],
   [
     "Excel Computer Solutions",
-    "Honest computer and laptop repairs in Ossett, styled like a repair bench.",
+    "Honest computer and laptop repairs, styled like a repair bench.",
     "excelcomp",
     "https://excelcomp.legxcysol.dev",
   ],
   [
     "A Picture of You",
-    "A wedding, portrait and newborn photography studio in Ossett.",
+    "A wedding, portrait and newborn photography studio.",
     "apou",
     "https://apou.legxcysol.dev",
   ],
