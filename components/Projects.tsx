@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "Daniel & Son",
+    "Landscaping and garden care, with a hero laid out like paving and before-and-after sliders.",
+    "dandsons",
+    "https://dandsons.legxcysol.dev",
+  ],
+  [
     "MJ’s Upholstery",
     "Car interiors and furniture upholstery, laid out like a fabric sample book.",
     "mjs",
