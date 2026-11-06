@@ -8,7 +8,7 @@ A sleek, modern, responsive website to showcase professional freelance web devel
 ## ✨ Features
 
 - 🌱 Clean, modern UI with a mossy/foresty aesthetic
-- 🧠 Scroll-based fade-in animations using Framer Motion
+- 🧠 Scroll-based fade-in animations using Motion
 - 📬 Contact form with:
   - React Hook Form
   - Cloudflare Turnstile
@@ -27,7 +27,7 @@ A sleek, modern, responsive website to showcase professional freelance web devel
 - **Next.js** (App Router)
 - **React** (with TypeScript)
 - **Tailwind CSS** — utility-first styling
-- **Framer Motion** — animations and interactions
+- **Motion** — animations and interactions
 - **React Hook Form** — contact form validation
 - **Cloudflare Turnstile** — CAPTCHA-free bot protection
 - **Sonner** — elegant toast notifications
