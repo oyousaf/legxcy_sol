@@ -4,7 +4,7 @@ import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
     "The Beauty Spot",
-    "A beauty salon concept with a top-to-toe treatment menu, a showcase booking system and a salon diary.",
+    "Beauty treatments from top to toe, with a showcase booking system and a salon diary.",
     "tbs",
     "https://tbs.legxcysol.dev",
   ],
