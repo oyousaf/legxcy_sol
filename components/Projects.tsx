@@ -3,6 +3,12 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 const projects = [
   [
+    "The Beauty Spot",
+    "A beauty salon concept with a top-to-toe treatment menu, a showcase booking system and a salon diary.",
+    "tbs",
+    "https://tbs.legxcysol.dev",
+  ],
+  [
     "Daniel & Son",
     "Landscaping and garden care, with a hero laid out like paving and before-and-after sliders.",
     "dandsons",
