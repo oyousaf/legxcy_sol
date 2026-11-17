@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Local outreach records (never commit customer data)
 /.data/
+
+# Ad video kept locally for Google/Meta ads (not a site asset)
+/public/ad.mp4
