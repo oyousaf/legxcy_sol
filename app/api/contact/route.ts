@@ -98,8 +98,8 @@ Sent via Legxcy Solutions Website
                  style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
             <tr>
               <td style="text-align:center;padding:15px 20px 10px 20px;">
-                <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                     style="max-width:120px;height:auto;margin-bottom:10px;" />
+                <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo" width="120"
+                     style="display:block;width:120px;max-width:120px;height:auto;margin:0 auto 10px auto;" />
                 <h2 style="color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;">
                   New Contact Form Submission
                 </h2>
@@ -150,8 +150,8 @@ Legxcy Solutions
                 style="max-width:600px;margin:auto;background-color:#1b3a2c;border-radius:12px;overflow:hidden;">
             <tr>
               <td style="text-align:center;padding:15px 20px 10px 20px;">
-                <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo"
-                    style="max-width:120px;height:auto;margin-bottom:10px;" />
+                <img src="https://legxcysol.dev/logo.webp" alt="Legxcy Solutions Logo" width="120"
+                    style="display:block;width:120px;max-width:120px;height:auto;margin:0 auto 10px auto;" />
               <h2 style="text-align:center;color:#59ae6a;margin:10px 0;font-weight:600;font-size:20px;">
                 Thank You for Getting in Touch
               </h2>
@@ -174,8 +174,8 @@ Legxcy Solutions
                     <td>
                       <p style="font-size:14px;color:#a3a3a3;margin-bottom:10px;">Best regards,</p>
                       <a href="https://legxcysol.dev" target="_blank" style="text-decoration:none;">
-                        <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner"
-                            style="max-width:150px;height:auto;border-radius:6px;" />
+                        <img src="https://legxcysol.dev/banner.webp" alt="Legxcy Solutions Banner" width="150"
+                            style="display:block;width:150px;max-width:150px;height:auto;margin:0 auto;border-radius:6px;" />
                       </a>
                     </td>
                   </tr>
